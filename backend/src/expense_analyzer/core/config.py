@@ -10,6 +10,12 @@ class Settings(BaseSettings):
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
 
+    database_host: str
+    database_port: int = 5432
+    database_name: str
+    database_user: str
+    database_password: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -18,6 +24,6 @@ class Settings(BaseSettings):
     )
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
     return Settings()

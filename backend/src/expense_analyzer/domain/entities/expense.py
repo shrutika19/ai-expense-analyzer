@@ -1,6 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
+from uuid import UUID, uuid4
 
 from expense_analyzer.domain.enums.expense_category import ExpenseCategory
 from expense_analyzer.exceptions.domain import InvalidExpenseException
@@ -12,6 +13,7 @@ class Expense:
     description: str
     category: ExpenseCategory
     expense_date: date
+    id: UUID = field(default_factory=uuid4)
 
     def __post_init__(self) -> None:
         if self.amount <= Decimal("0"):

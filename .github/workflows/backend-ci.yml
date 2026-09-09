@@ -20,12 +20,32 @@ jobs:
     name: Backend Tests
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: expense_analyzer_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d expense_analyzer_db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     defaults:
       run:
         working-directory: backend
 
     env:
       PYTHONPATH: src
+      DATABASE_HOST: localhost
+      DATABASE_PORT: 5432
+      DATABASE_NAME: expense_analyzer_db
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
 
     steps:
       - name: Checkout repository
@@ -40,6 +60,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Initialize database
+        run: python scripts/init_db.py
 
       - name: Run tests
         run: pytest
