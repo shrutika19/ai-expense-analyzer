@@ -1,5 +1,6 @@
 from datetime import date
 from decimal import Decimal
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -25,6 +26,7 @@ class ExpenseCreateRequest(BaseModel):
 class ExpenseResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    id: UUID
     amount: Decimal
     description: str
     category: ExpenseCategory
