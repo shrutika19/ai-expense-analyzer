@@ -1,0 +1,14 @@
+[
+  {
+    "amount": "250.50",
+    "description": "Lunch",
+    "category": "Food",
+    "expense_date": "2026-09-09"
+  },
+  {
+    "amount": "1200.00",
+    "description": "Uber ride",
+    "category": "Travel",
+    "expense_date": "2026-09-08"
+  }
+]
