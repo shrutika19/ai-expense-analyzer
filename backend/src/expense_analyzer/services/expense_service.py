@@ -8,6 +8,9 @@ from expense_analyzer.preprocessing.pipeline import PreprocessingPipeline
 from expense_analyzer.validation.validators.expense_validator import (
     ExpenseValidationModel,
 )
+from expense_analyzer.repositories.expense_repository import (
+    ExpenseRepository,
+)
 
 
 class ExpenseService:
@@ -15,19 +18,23 @@ class ExpenseService:
     def __init__(
         self,
         preprocessing_pipeline: PreprocessingPipeline,
+        repository: ExpenseRepository,
     ) -> None:
         self.preprocessing_pipeline = preprocessing_pipeline
+        self.repository = repository
 
     def create_expense(
         self,
         request: ExpenseCreateRequest,
     ) -> Expense:
-        return Expense(
+        expense = Expense(
             amount=request.amount,
             description=request.description,
             category=request.category,
             expense_date=request.expense_date,
         )
+    
+        return self.repository.save(expense)
 
     def process_records(
         self,
@@ -62,3 +69,6 @@ class ExpenseService:
             expenses.append(expense)
 
         return expenses
+
+    def get_expenses(self) -> list[Expense]:
+        return self.repository.find_all()

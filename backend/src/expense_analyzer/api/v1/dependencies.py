@@ -16,6 +16,9 @@ from expense_analyzer.preprocessing.processors.missing_value import (
 from expense_analyzer.preprocessing.processors.normalization import (
     NormalizationProcessor,
 )
+from expense_analyzer.repositories.expense_repository import (
+    ExpenseRepository,
+)
 from expense_analyzer.services.expense_service import ExpenseService
 
 
@@ -38,4 +41,5 @@ def get_expense_service(
 ) -> ExpenseService:
     return ExpenseService(
         preprocessing_pipeline=pipeline,
+        repository=ExpenseRepository(),
     )

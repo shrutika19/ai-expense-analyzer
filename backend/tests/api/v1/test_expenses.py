@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi.testclient import TestClient
 
 from expense_analyzer.main import app
@@ -19,7 +21,11 @@ def test_create_expense() -> None:
 
     assert response.status_code == 201
 
-    assert response.json() == {
+    data = response.json()
+
+    assert UUID(data["id"])
+    assert data == {
+        "id": data["id"],
         "amount": "250.50",
         "description": "Lunch",
         "category": "Food",

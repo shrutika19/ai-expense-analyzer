@@ -1,6 +1,8 @@
 from datetime import date
 from decimal import Decimal
 
+from expense_analyzer.domain.entities.expense import Expense
+
 from expense_analyzer.api.v1.schemas.expense import (
     ExpenseCreateRequest,
 )
@@ -24,6 +26,15 @@ from expense_analyzer.preprocessing.processors.normalization import (
 from expense_analyzer.services.expense_service import ExpenseService
 
 
+class FakeExpenseRepository:
+
+    def save(self, expense: Expense) -> Expense:
+        return expense
+
+    def find_all(self) -> list[Expense]:
+        return []
+
+
 def create_service() -> ExpenseService:
     pipeline = PreprocessingPipeline(
         processors=[
@@ -37,6 +48,7 @@ def create_service() -> ExpenseService:
 
     return ExpenseService(
         preprocessing_pipeline=pipeline,
+        repository=FakeExpenseRepository(),
     )
 
 
