@@ -13,6 +13,13 @@ from expense_analyzer.domain.enums.expense_category import (
 class ExpenseRepository:
 
     def save(self, expense: Expense) -> Expense:
+        self.save_many([expense])
+        return expense
+
+    def save_many(self, expenses: list[Expense]) -> list[Expense]:
+        if not expenses:
+            return []
+
         query = """
             INSERT INTO expenses (
                 id,
@@ -26,18 +33,19 @@ class ExpenseRepository:
 
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute(
-                    query,
-                    (
-                        expense.id,
-                        expense.amount,
-                        expense.description,
-                        expense.category.value,
-                        expense.expense_date,
-                    ),
-                )
+                for expense in expenses:
+                    cursor.execute(
+                        query,
+                        (
+                            expense.id,
+                            expense.amount,
+                            expense.description,
+                            expense.category.value,
+                            expense.expense_date,
+                        ),
+                    )
 
-        return expense
+        return expenses
 
     def find_all(self) -> list[Expense]:
         query = """
