@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from expense_analyzer.domain.enums.expense_category import ExpenseCategory
 
@@ -21,6 +21,17 @@ class ExpenseCreateRequest(BaseModel):
     )
     category: ExpenseCategory
     expense_date: date
+
+    @field_validator("category", mode="before")
+    @classmethod
+    def normalize_category(cls, value: ExpenseCategory | str) -> ExpenseCategory | str:
+        if isinstance(value, str):
+            try:
+                return ExpenseCategory[value]
+            except KeyError:
+                return value
+
+        return value
 
 
 class ExpenseResponse(BaseModel):

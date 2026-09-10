@@ -4,6 +4,13 @@ from expense_analyzer.api.routes.health import router as health_router
 from expense_analyzer.api.v1.router import router as v1_router
 from expense_analyzer.core.config import get_settings
 
+from expense_analyzer.api.exception_handlers import (
+    expense_not_found_handler,
+)
+from expense_analyzer.exceptions.api import (
+    ExpenseNotFoundException,
+)
+
 
 settings = get_settings()
 
@@ -15,3 +22,8 @@ app = FastAPI(
 
 app.include_router(health_router)
 app.include_router(v1_router)
+
+app.add_exception_handler(
+    ExpenseNotFoundException,
+    expense_not_found_handler,
+)

@@ -62,6 +62,28 @@ class ExpenseRepository:
             for row in rows
         ]
 
+    def find_by_id(self, expense_id: UUID) -> Expense | None:
+        query = """
+            SELECT
+                id,
+                amount,
+                description,
+                category,
+                expense_date
+            FROM expenses
+            WHERE id = %s
+        """
+
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(query, (expense_id,))
+                row = cursor.fetchone()
+
+        if row is None:
+            return None
+
+        return self._map_row_to_expense(row)
+
     @staticmethod
     def _map_row_to_expense(
         row: tuple,

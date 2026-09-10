@@ -3,6 +3,7 @@ from enum import Enum
 
 class ExpenseCategory(str, Enum):
     FOOD = "Food"
+    TRANSPORT = "Transport"
     TRAVEL = "Travel"
     SHOPPING = "Shopping"
     ENTERTAINMENT = "Entertainment"

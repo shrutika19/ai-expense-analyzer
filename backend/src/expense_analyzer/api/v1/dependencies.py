@@ -1,5 +1,15 @@
 from fastapi import Depends
 
+from expense_analyzer.analytics.calculators.category import (
+    CategoryCalculator,
+)
+from expense_analyzer.analytics.calculators.monthly import (
+    MonthlyCalculator,
+)
+from expense_analyzer.analytics.calculators.summary import (
+    SummaryCalculator,
+)
+from expense_analyzer.analytics.service import AnalyticsService
 from expense_analyzer.preprocessing.pipeline import PreprocessingPipeline
 from expense_analyzer.preprocessing.processors.amount import (
     AmountNormalizationProcessor,
@@ -34,12 +44,32 @@ def get_preprocessing_pipeline() -> PreprocessingPipeline:
     )
 
 
+def get_expense_repository() -> ExpenseRepository:
+    return ExpenseRepository()
+
+
 def get_expense_service(
     pipeline: PreprocessingPipeline = Depends(
         get_preprocessing_pipeline
     ),
+    repository: ExpenseRepository = Depends(
+        get_expense_repository
+    ),
 ) -> ExpenseService:
     return ExpenseService(
         preprocessing_pipeline=pipeline,
-        repository=ExpenseRepository(),
+        repository=repository,
+    )
+
+
+def get_analytics_service(
+    repository: ExpenseRepository = Depends(
+        get_expense_repository
+    ),
+) -> AnalyticsService:
+    return AnalyticsService(
+        summary_calculator=SummaryCalculator(),
+        category_calculator=CategoryCalculator(),
+        monthly_calculator=MonthlyCalculator(),
+        repository=repository,
     )

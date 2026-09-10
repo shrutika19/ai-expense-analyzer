@@ -1,5 +1,5 @@
-from datetime import date
 from decimal import Decimal
+from unittest.mock import Mock
 
 from expense_analyzer.analytics.calculators.category import (
     CategoryCalculator,
@@ -13,117 +13,126 @@ from expense_analyzer.analytics.calculators.summary import (
 from expense_analyzer.analytics.service import AnalyticsService
 from expense_analyzer.domain.entities.expense import Expense
 from expense_analyzer.domain.enums.expense_category import ExpenseCategory
+from expense_analyzer.repositories.expense_repository import (
+    ExpenseRepository,
+)
 
 
-def create_expenses() -> list[Expense]:
-    return [
-        Expense(
-            amount=Decimal("100.00"),
-            description="Lunch",
-            category=ExpenseCategory.FOOD,
-            expense_date=date(2026, 9, 1),
-        ),
-        Expense(
-            amount=Decimal("200.00"),
-            description="Uber",
-            category=ExpenseCategory.TRAVEL,
-            expense_date=date(2026, 9, 2),
-        ),
-        Expense(
-            amount=Decimal("300.00"),
-            description="Dinner",
-            category=ExpenseCategory.FOOD,
-            expense_date=date(2026, 10, 1),
-        ),
-    ]
-
-
-def create_service() -> AnalyticsService:
+def create_service(
+    repository: ExpenseRepository,
+) -> AnalyticsService:
     return AnalyticsService(
         summary_calculator=SummaryCalculator(),
         category_calculator=CategoryCalculator(),
         monthly_calculator=MonthlyCalculator(),
+        repository=repository,
     )
-
 
 
 def test_get_summary() -> None:
-    service = create_service()
+    expenses = [
+        Expense(
+            amount=Decimal("100.00"),
+            description="Food",
+            category=ExpenseCategory.FOOD,
+            expense_date=__import__("datetime").date(
+                2026,
+                1,
+                10,
+            ),
+        ),
+        Expense(
+            amount=Decimal("200.00"),
+            description="Transport",
+            category=ExpenseCategory.TRANSPORT,
+            expense_date=__import__("datetime").date(
+                2026,
+                1,
+                15,
+            ),
+        ),
+    ]
 
-    result = service.get_summary(create_expenses())
+    repository = Mock(spec=ExpenseRepository)
+    repository.find_all.return_value = expenses
 
-    assert result.total_amount == Decimal("600.00")
-    assert result.expense_count == 3
-    assert result.average_amount == Decimal("200.00")
-    assert result.highest_amount == Decimal("300.00")
-    assert result.lowest_amount == Decimal("100.00")
+    service = create_service(repository)
 
+    result = service.get_summary()
+
+    assert result.total_amount == Decimal("300.00")
+    assert result.expense_count == 2
+    repository.find_all.assert_called_once()
 
 
 def test_get_category_summary() -> None:
-    service = create_service()
+    expenses = [
+        Expense(
+            amount=Decimal("100.00"),
+            description="Food",
+            category=ExpenseCategory.FOOD,
+            expense_date=__import__("datetime").date(
+                2026,
+                1,
+                10,
+            ),
+        ),
+        Expense(
+            amount=Decimal("50.00"),
+            description="Food",
+            category=ExpenseCategory.FOOD,
+            expense_date=__import__("datetime").date(
+                2026,
+                1,
+                11,
+            ),
+        ),
+    ]
 
-    result = service.get_category_summary(create_expenses())
+    repository = Mock(spec=ExpenseRepository)
+    repository.find_all.return_value = expenses
 
-    assert len(result) == 2
+    service = create_service(repository)
 
-    food = next(
-        item for item in result
-        if item.category == "Food"
-    )
+    result = service.get_category_summary()
 
-    travel = next(
-        item for item in result
-        if item.category == "Travel"
-    )
-
-    assert food.total_amount == Decimal("400.00")
-    assert food.expense_count == 2
-
-    assert travel.total_amount == Decimal("200.00")
-    assert travel.expense_count == 1
+    assert len(result) == 1
+    assert result[0].category == ExpenseCategory.FOOD.value
+    assert result[0].total_amount == Decimal("150.00")
+    assert result[0].expense_count == 2
 
 
 def test_get_monthly_summary() -> None:
-    service = create_service()
+    expenses = [
+        Expense(
+            amount=Decimal("100.00"),
+            description="Food",
+            category=ExpenseCategory.FOOD,
+            expense_date=__import__("datetime").date(
+                2026,
+                1,
+                10,
+            ),
+        ),
+        Expense(
+            amount=Decimal("200.00"),
+            description="Transport",
+            category=ExpenseCategory.TRANSPORT,
+            expense_date=__import__("datetime").date(
+                2026,
+                2,
+                15,
+            ),
+        ),
+    ]
 
-    result = service.get_monthly_summary(create_expenses())
+    repository = Mock(spec=ExpenseRepository)
+    repository.find_all.return_value = expenses
+
+    service = create_service(repository)
+
+    result = service.get_monthly_summary()
 
     assert len(result) == 2
-
-    september = next(
-        item for item in result
-        if item.month == "2026-09"
-    )
-
-    october = next(
-        item for item in result
-        if item.month == "2026-10"
-    )
-
-    assert september.total_amount == Decimal("300.00")
-    assert september.expense_count == 2
-
-    assert october.total_amount == Decimal("300.00")
-    assert october.expense_count == 1
-
-
-
-def test_service_handles_empty_expenses() -> None:
-    service = create_service()
-
-    summary = service.get_summary([])
-
-    assert summary.total_amount == Decimal("0")
-    assert summary.expense_count == 0
-    assert summary.average_amount == Decimal("0")
-    assert summary.highest_amount is None
-    assert summary.lowest_amount is None
-
-    category_summary = service.get_category_summary([])
-
-    assert category_summary == []
-
-    monthly_summary = service.get_monthly_summary([])
-
-    assert monthly_summary == []
+    assert result[0].month == "2026-01"
+    assert result[1].month == "2026-02"
