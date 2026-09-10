@@ -29,6 +29,9 @@ from expense_analyzer.preprocessing.processors.normalization import (
 from expense_analyzer.repositories.expense_repository import (
     ExpenseRepository,
 )
+from expense_analyzer.services.expense_import_service import (
+    ExpenseImportService,
+)
 from expense_analyzer.services.expense_service import ExpenseService
 
 
@@ -72,4 +75,17 @@ def get_analytics_service(
         category_calculator=CategoryCalculator(),
         monthly_calculator=MonthlyCalculator(),
         repository=repository,
+    )
+
+def get_expense_import_service(
+    repository: ExpenseRepository = Depends(
+        get_expense_repository
+    ),
+    pipeline: PreprocessingPipeline = Depends(
+        get_preprocessing_pipeline
+    ),
+) -> ExpenseImportService:
+    return ExpenseImportService(
+        repository=repository,
+        preprocessing_pipeline=pipeline,
     )

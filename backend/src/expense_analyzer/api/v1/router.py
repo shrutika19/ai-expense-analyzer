@@ -6,6 +6,9 @@ from expense_analyzer.api.v1.routes.analytics import (
 from expense_analyzer.api.v1.routes.expenses import (
     router as expenses_router,
 )
+from expense_analyzer.api.v1.routes.expense_imports import (
+    router as imports_router,
+)
 
 
 router = APIRouter(
@@ -14,3 +17,4 @@ router = APIRouter(
 
 router.include_router(expenses_router)
 router.include_router(analytics_router)
+router.include_router(imports_router)
