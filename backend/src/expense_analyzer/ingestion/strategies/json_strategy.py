@@ -16,4 +16,15 @@ class JSONIngestionStrategy(IngestionStrategy):
         if not isinstance(data, list):
             raise ValueError("JSON expense data must be an array.")
 
-        return data
+        records: list[dict[str, Any]] = []
+        for row_number, record in enumerate(data, start=1):
+            if not isinstance(record, dict):
+                raise ValueError(
+                    f"JSON item {row_number} must be an object."
+                )
+
+            normalized_record = dict(record)
+            normalized_record["_row_number"] = row_number
+            records.append(normalized_record)
+
+        return records
