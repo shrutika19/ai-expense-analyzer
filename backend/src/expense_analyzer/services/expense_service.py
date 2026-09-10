@@ -1,5 +1,5 @@
 from typing import Any
-
+from uuid import UUID
 from expense_analyzer.api.v1.schemas.expense import (
     ExpenseCreateRequest,
 )
@@ -10,6 +10,9 @@ from expense_analyzer.validation.validators.expense_validator import (
 )
 from expense_analyzer.repositories.expense_repository import (
     ExpenseRepository,
+)
+from expense_analyzer.exceptions.api import (
+    ExpenseNotFoundException,
 )
 
 
@@ -72,3 +75,11 @@ class ExpenseService:
 
     def get_expenses(self) -> list[Expense]:
         return self.repository.find_all()
+
+    def get_expense(self, expense_id: UUID) -> Expense:
+        expense = self.repository.find_by_id(expense_id)
+
+        if expense is None:
+            raise ExpenseNotFoundException(str(expense_id))
+
+        return expense

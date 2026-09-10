@@ -1,5 +1,6 @@
 from datetime import date
 from decimal import Decimal
+from unittest.mock import Mock
 
 from expense_analyzer.analytics.calculators.category import (
     CategoryCalculator,
@@ -32,6 +33,9 @@ from expense_analyzer.preprocessing.processors.normalization import (
 from expense_analyzer.validation.validators.expense_validator import (
     ExpenseValidationModel,
 )
+from expense_analyzer.repositories.expense_repository import (
+    ExpenseRepository,
+)
 
 
 def create_pipeline() -> PreprocessingPipeline:
@@ -46,11 +50,14 @@ def create_pipeline() -> PreprocessingPipeline:
     )
 
 
-def create_analytics_service() -> AnalyticsService:
+def create_analytics_service(
+    repository: ExpenseRepository,
+) -> AnalyticsService:
     return AnalyticsService(
         summary_calculator=SummaryCalculator(),
         category_calculator=CategoryCalculator(),
         monthly_calculator=MonthlyCalculator(),
+        repository=repository,
     )
 
 
@@ -112,11 +119,13 @@ def test_preprocessing_validation_and_analytics_flow() -> None:
 
     expenses = convert_to_expenses(processed_records)
 
-    service = create_analytics_service()
+    repository = Mock(spec=ExpenseRepository)
+    repository.find_all.return_value = expenses
+    service = create_analytics_service(repository)
 
-    summary = service.get_summary(expenses)
-    category_summary = service.get_category_summary(expenses)
-    monthly_summary = service.get_monthly_summary(expenses)
+    summary = service.get_summary()
+    category_summary = service.get_category_summary()
+    monthly_summary = service.get_monthly_summary()
 
     assert len(expenses) == 2
 
