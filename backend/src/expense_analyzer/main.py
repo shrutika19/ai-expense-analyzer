@@ -6,9 +6,14 @@ from expense_analyzer.core.config import get_settings
 
 from expense_analyzer.api.exception_handlers import (
     expense_not_found_handler,
+    unsupported_file_type_handler,
 )
 from expense_analyzer.exceptions.api import (
     ExpenseNotFoundException,
+)
+
+from expense_analyzer.exceptions.expense_import import (
+    UnsupportedFileTypeException,
 )
 
 
@@ -26,4 +31,9 @@ app.include_router(v1_router)
 app.add_exception_handler(
     ExpenseNotFoundException,
     expense_not_found_handler,
+)
+
+app.add_exception_handler(
+    UnsupportedFileTypeException,
+    unsupported_file_type_handler,
 )
