@@ -73,7 +73,7 @@ export function UploadPanel() {
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
-  const { upload_file, loading, result, error_msg, reset_file } = useExpenseUpload();
+  const { upload_file } = useExpenseUpload();
 
   function reset() {
     setStatus("idle");
