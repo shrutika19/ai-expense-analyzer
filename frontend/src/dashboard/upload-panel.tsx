@@ -16,6 +16,8 @@ import {
 import { cn } from "@/lib/utils";
 import type { ParsedRow, UploadStatus } from "@/types";
 import { formatMoney } from "@/utils/format";
+import { useExpenseUpload } from "@/hooks/use-expense-upload";
+
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ACCEPTED = [".csv", ".json"];
@@ -71,6 +73,8 @@ export function UploadPanel() {
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
+  const { upload_file, loading, result, error_msg, reset_file } = useExpenseUpload();
+
   function reset() {
     setStatus("idle");
     setProgress(0);
@@ -79,50 +83,81 @@ export function UploadPanel() {
     setError(null);
   }
 
-  async function handleFile(file: File) {
-    setFileName(file.name);
-    setRows([]);
-    setError(null);
-    setStatus("validating");
+async function handleFile(file: File) {
+  setFileName(file.name);
+  setRows([]);
+  setError(null);
+  setStatus("validating");
+  setProgress(0);
 
-    const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
-    if (!ACCEPTED.includes(ext)) {
-      setStatus("error");
-      setError("Only .csv and .json files are supported.");
-      return;
-    }
-    if (file.size > MAX_BYTES) {
-      setStatus("error");
-      setError("File is larger than 5 MB.");
-      return;
-    }
+  const ext = file.name
+    .slice(file.name.lastIndexOf("."))
+    .toLowerCase();
 
-    try {
-      const text = await file.text();
-      const parsed = ext === ".csv" ? parseCsv(text) : parseJson(text);
-      if (parsed.length === 0) throw new Error("The file has no rows.");
-      setRows(parsed);
-    } catch (e) {
-      setStatus("error");
-      setError(e instanceof Error ? e.message : "We couldn't read that file.");
-      return;
-    }
-
-    setStatus("uploading");
-    setProgress(0);
-    let value = 0;
-    const timer = setInterval(() => {
-      value += 12 + Math.random() * 18;
-      if (value >= 100) {
-        clearInterval(timer);
-        setProgress(100);
-        setStatus("success");
-        toast.success("File validated and ready for processing");
-      } else {
-        setProgress(Math.round(value));
-      }
-    }, 180);
+  if (!ACCEPTED.includes(ext)) {
+    setStatus("error");
+    setError("Only .csv and .json files are supported.");
+    return;
   }
+
+  if (file.size > MAX_BYTES) {
+    setStatus("error");
+    setError("File is larger than 5 MB.");
+    return;
+  }
+
+  try {
+    const text = await file.text();
+
+    const parsed =
+      ext === ".csv"
+        ? parseCsv(text)
+        : parseJson(text);
+
+    if (parsed.length === 0) {
+      throw new Error("The file has no rows.");
+    }
+
+    setRows(parsed);
+  } catch (e) {
+    setStatus("error");
+    setError(
+      e instanceof Error
+        ? e.message
+        : "We couldn't read that file.",
+    );
+    return;
+  }
+
+  setStatus("uploading");
+  setProgress(25);
+
+  try {
+    const response = await upload_file(file);
+
+    if (!response) {
+      setStatus("error");
+      setError("Failed to import expenses.");
+      setProgress(0);
+      return;
+    }
+
+    setProgress(100);
+    setStatus("success");
+
+    toast.success(
+      `${response.imported_count} expenses imported successfully.`,
+    );
+  } catch (e) {
+    setStatus("error");
+    setError(
+      e instanceof Error
+        ? e.message
+        : "Failed to import expenses.",
+    );
+    setProgress(0);
+  }
+}
 
   const busy = status === "validating" || status === "uploading";
 
