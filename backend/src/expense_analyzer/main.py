@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from expense_analyzer.api.routes.health import router as health_router
 from expense_analyzer.api.v1.router import router as v1_router
@@ -23,6 +24,18 @@ app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     debug=settings.debug,
+)
+
+origins = [
+    "http://localhost:5173",  
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,           # Allows specific domains
+    allow_credentials=True,          # Allows cookies and auth headers
+    allow_methods=["*"],             # Allows all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],             # Allows all request headers
 )
 
 app.include_router(health_router)
