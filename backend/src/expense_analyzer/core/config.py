@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     database_user: str
     database_password: str
 
+    # JWT configuration
+    jwt_secret_key: str
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 30
+
     model_config = SettingsConfigDict(
         env_file=os.getenv("ENV_FILE", ".env"),
         env_file_encoding="utf-8",

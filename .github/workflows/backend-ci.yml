@@ -27,8 +27,10 @@ jobs:
           POSTGRES_DB: expense_analyzer_test
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
+
         ports:
           - 5432:5432
+
         options: >-
           --health-cmd="pg_isready -U postgres -d expense_analyzer_test"
           --health-interval=10s
@@ -65,15 +67,20 @@ jobs:
           ENVIRONMENT=test
           DEBUG=false
           API_V1_PREFIX=/api/v1
+
           DATABASE_HOST=localhost
           DATABASE_PORT=5432
           DATABASE_NAME=expense_analyzer_test
           DATABASE_USER=postgres
           DATABASE_PASSWORD=postgres
+
+          JWT_SECRET_KEY=test-secret-key-for-ci
+          JWT_ALGORITHM=HS256
+          JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
           EOF
 
       - name: Initialize database
         run: python scripts/init_db.py
 
       - name: Run tests
-        run: pytest
+        run: pytest -v

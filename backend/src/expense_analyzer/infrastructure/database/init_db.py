@@ -3,6 +3,18 @@ from expense_analyzer.infrastructure.database.connection import (
 )
 
 
+CREATE_USERS_TABLE = """
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+"""
+
+
 CREATE_EXPENSES_TABLE = """
 CREATE TABLE IF NOT EXISTS expenses (
     id UUID PRIMARY KEY,
@@ -18,4 +30,5 @@ CREATE TABLE IF NOT EXISTS expenses (
 def initialize_database() -> None:
     with get_connection() as connection:
         with connection.cursor() as cursor:
+            cursor.execute(CREATE_USERS_TABLE)
             cursor.execute(CREATE_EXPENSES_TABLE)
