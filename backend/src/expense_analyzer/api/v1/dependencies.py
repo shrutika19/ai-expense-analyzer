@@ -35,6 +35,7 @@ from expense_analyzer.services.expense_import_service import (
 from expense_analyzer.services.expense_service import ExpenseService
 from expense_analyzer.repositories.user_repository import UserRepository
 from expense_analyzer.services.auth_service import AuthService
+from expense_analyzer.security.jwt import JWTService
 
 
 def get_preprocessing_pipeline() -> PreprocessingPipeline:
@@ -98,8 +99,12 @@ def get_user_repository() -> UserRepository:
 
 
 def get_auth_service(
-    user_repository: UserRepository = Depends(get_user_repository),
+    user_repository: UserRepository = Depends(
+        get_user_repository
+    ),
 ) -> AuthService:
+
     return AuthService(
         user_repository=user_repository,
+        jwt_service=JWTService(),
     )
