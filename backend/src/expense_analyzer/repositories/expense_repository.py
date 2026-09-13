@@ -59,12 +59,13 @@ class ExpenseRepository:
                 category,
                 expense_date
             FROM expenses
+            WHERE user_id = %s
             ORDER BY expense_date DESC, created_at DESC
         """
 
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute(query)
+                cursor.execute(query, (user_id,))
 
                 rows = cursor.fetchall()
 
