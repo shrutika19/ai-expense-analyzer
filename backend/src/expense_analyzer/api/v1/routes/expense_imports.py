@@ -12,8 +12,10 @@ from fastapi import (
 from pydantic import ValidationError
 
 from expense_analyzer.api.v1.dependencies import (
+    get_current_user,
     get_expense_import_service,
 )
+from expense_analyzer.domain.entities.user import User
 from expense_analyzer.api.v1.schemas.expense_import import (
     ExpenseImportResponse,
 )
@@ -44,6 +46,7 @@ router = APIRouter(
 )
 async def import_expenses(
     file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
     service: ExpenseImportService = Depends(
         get_expense_import_service
     ),
@@ -90,7 +93,7 @@ async def import_expenses(
         temporary_file.close()
 
         try:
-            result = service.import_expenses_detailed(temporary_path)
+            result = service.import_expenses_detailed(temporary_path,user_id=current_user.id,)
         except UnsupportedFileTypeException:
             raise
         except (ValueError, ValidationError) as exc:
