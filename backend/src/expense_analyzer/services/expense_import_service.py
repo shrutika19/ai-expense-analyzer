@@ -1,5 +1,6 @@
 from pathlib import Path
 from dataclasses import dataclass, field
+from uuid import UUID
 
 from expense_analyzer.domain.entities.expense import Expense
 from expense_analyzer.ingestion.factory import (
@@ -41,12 +42,14 @@ class ExpenseImportService:
     def import_expenses(
         self,
         file_path: Path,
+        user_id: UUID,
     ) -> list[Expense]:
-        return self.import_expenses_detailed(file_path).expenses
+        return self.import_expenses_detailed(file_path, user_id,).expenses
 
     def import_expenses_detailed(
         self,
         file_path: Path,
+        user_id: UUID,
     ) -> ImportResult:
 
         strategy = IngestionStrategyFactory.get_strategy(
@@ -119,6 +122,7 @@ class ExpenseImportService:
                     description=validated_record.description,
                     category=validated_record.category,
                     expense_date=validated_record.expense_date,
+                    user_id=user_id,
                 )
             )
 

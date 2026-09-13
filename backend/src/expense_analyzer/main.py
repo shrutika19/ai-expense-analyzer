@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
+
+from expense_analyzer.core.rate_limit import limiter
 
 from expense_analyzer.api.exception_handlers import (
     expense_not_found_handler,
@@ -9,6 +13,7 @@ from expense_analyzer.api.exception_handlers import (
     unsupported_file_type_handler,
     user_already_exists_handler,
     user_not_found_handler,
+    generic_exception_handler,
 )
 from expense_analyzer.api.routes.health import router as health_router
 from expense_analyzer.api.v1.router import router as v1_router
@@ -26,29 +31,48 @@ from expense_analyzer.exceptions.auth import (
 from expense_analyzer.exceptions.expense_import import (
     UnsupportedFileTypeException,
 )
+from expense_analyzer.api.security_headers import (
+    SecurityHeadersMiddleware,
+)
 
 
 settings = get_settings()
 
+is_development = settings.environment.lower() == "development"
 
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
-    debug=settings.debug,
+    debug=settings.debug if is_development else False,
 )
+
+app.state.limiter = limiter
 
 
 origins = [
     "http://localhost:5173",
 ]
 
+app.add_middleware(
+    SecurityHeadersMiddleware
+)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.cors_allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=[
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS",
+    ],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+    ],
 )
 
 
@@ -63,6 +87,16 @@ app.include_router(v1_router)
 # ---------------------------------------------------------------------------
 # Exception Handlers
 # ---------------------------------------------------------------------------
+app.add_exception_handler(
+    RateLimitExceeded,
+    _rate_limit_exceeded_handler,
+)
+
+app.add_exception_handler(
+    Exception,
+    generic_exception_handler,
+)
+
 
 app.add_exception_handler(
     ExpenseNotFoundException,

@@ -1,3 +1,4 @@
+from uuid import UUID
 from expense_analyzer.analytics.calculators.category import (
     CategoryCalculator,
 )
@@ -32,17 +33,17 @@ class AnalyticsService:
         self.monthly_calculator = monthly_calculator
         self.repository = repository
 
-    def get_summary(self) -> ExpenseSummary:
-        expenses = self.repository.find_all()
+    def get_summary(self,user_id: UUID) -> ExpenseSummary:
+        expenses = self.repository.find_all(user_id)
 
         return self.summary_calculator.calculate(expenses)
 
-    def get_category_summary(self) -> list[CategorySummary]:
-        expenses = self.repository.find_all()
+    def get_category_summary(self, user_id: UUID,) -> list[CategorySummary]:
+        expenses = self.repository.find_all(user_id)
 
         return self.category_calculator.calculate(expenses)
 
-    def get_monthly_summary(self) -> list[MonthlySummary]:
-        expenses = self.repository.find_all()
+    def get_monthly_summary(self, user_id: UUID,) -> list[MonthlySummary]:
+        expenses = self.repository.find_all(user_id)
 
         return self.monthly_calculator.calculate(expenses)

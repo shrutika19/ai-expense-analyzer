@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
@@ -16,6 +18,28 @@ from expense_analyzer.exceptions.auth import (
     InactiveUserException,
     InvalidTokenException,
 )
+
+logger = logging.getLogger(__name__)
+
+
+async def generic_exception_handler(
+    request: Request,
+    exc: Exception,
+) -> JSONResponse:
+
+    logger.exception(
+        "Unhandled exception: %s %s",
+        request.method,
+        request.url.path,
+    )
+
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "INTERNAL_SERVER_ERROR",
+            "message": "An unexpected error occurred.",
+        },
+    )
 
 def expense_not_found_handler(
     request: Request,
