@@ -36,7 +36,4 @@ class AuthService:
             updated_at=now,
         )
 
-        # Convert domain entity to persistence model here
-        # depending on your SQLAlchemy architecture.
-
         return user

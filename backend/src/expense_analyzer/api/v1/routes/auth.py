@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, status
 
+from expense_analyzer.api.v1.dependencies import get_auth_service
 from expense_analyzer.api.v1.schemas.auth import (
     CurrentUserResponse,
     RegisterRequest,

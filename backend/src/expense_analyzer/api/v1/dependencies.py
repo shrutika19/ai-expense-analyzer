@@ -33,6 +33,8 @@ from expense_analyzer.services.expense_import_service import (
     ExpenseImportService,
 )
 from expense_analyzer.services.expense_service import ExpenseService
+from expense_analyzer.repositories.user_repository import UserRepository
+from expense_analyzer.services.auth_service import AuthService
 
 
 def get_preprocessing_pipeline() -> PreprocessingPipeline:
@@ -88,4 +90,16 @@ def get_expense_import_service(
     return ExpenseImportService(
         repository=repository,
         preprocessing_pipeline=pipeline,
+    )
+
+
+def get_user_repository() -> UserRepository:
+    return UserRepository()
+
+
+def get_auth_service(
+    user_repository: UserRepository = Depends(get_user_repository),
+) -> AuthService:
+    return AuthService(
+        user_repository=user_repository,
     )
