@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
 
+    cors_allowed_origins: list[str] = [
+        "http://localhost:5173",
+    ]
+
     database_host: str
     database_port: int = 5432
     database_name: str
@@ -28,7 +32,6 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
-
 
 @lru_cache
 def get_settings() -> Settings:
