@@ -1,5 +1,7 @@
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from fastapi import Request
+from expense_analyzer.core.rate_limit import limiter
 
 from fastapi import (
     APIRouter,
@@ -44,7 +46,9 @@ router = APIRouter(
     response_model=ExpenseImportResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit("10/minute")
 async def import_expenses(
+    request: Request,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     service: ExpenseImportService = Depends(

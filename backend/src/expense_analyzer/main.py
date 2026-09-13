@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
+
+from expense_analyzer.core.rate_limit import limiter
 
 from expense_analyzer.api.exception_handlers import (
     expense_not_found_handler,
@@ -42,6 +46,9 @@ app = FastAPI(
     debug=settings.debug if is_development else False,
 )
 
+app.state.limiter = limiter
+
+
 origins = [
     "http://localhost:5173",
 ]
@@ -80,6 +87,11 @@ app.include_router(v1_router)
 # ---------------------------------------------------------------------------
 # Exception Handlers
 # ---------------------------------------------------------------------------
+app.add_exception_handler(
+    RateLimitExceeded,
+    _rate_limit_exceeded_handler,
+)
+
 app.add_exception_handler(
     Exception,
     generic_exception_handler,
