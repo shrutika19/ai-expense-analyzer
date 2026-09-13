@@ -23,12 +23,13 @@ class ExpenseRepository:
         query = """
             INSERT INTO expenses (
                 id,
+                user_id,
                 amount,
                 description,
                 category,
                 expense_date
             )
-            VALUES (%s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """
 
         with get_connection() as connection:
@@ -38,6 +39,7 @@ class ExpenseRepository:
                         query,
                         (
                             expense.id,
+                            expense.user_id,
                             expense.amount,
                             expense.description,
                             expense.category.value,
@@ -47,10 +49,11 @@ class ExpenseRepository:
 
         return expenses
 
-    def find_all(self) -> list[Expense]:
+    def find_all(self,user_id: UUID) -> list[Expense]:
         query = """
             SELECT
                 id,
+                user_id,
                 amount,
                 description,
                 category,
@@ -70,21 +73,23 @@ class ExpenseRepository:
             for row in rows
         ]
 
-    def find_by_id(self, expense_id: UUID) -> Expense | None:
+    def find_by_id(self, expense_id: UUID, user_id: UUID,) -> Expense | None:
         query = """
             SELECT
                 id,
+                user_id,
                 amount,
                 description,
                 category,
                 expense_date
             FROM expenses
             WHERE id = %s
+                AND user_id = %s
         """
 
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute(query, (expense_id,))
+                cursor.execute(query, (expense_id,user_id))
                 row = cursor.fetchone()
 
         if row is None:
@@ -98,8 +103,9 @@ class ExpenseRepository:
     ) -> Expense:
         return Expense(
             id=UUID(str(row[0])),
-            amount=row[1],
-            description=row[2],
-            category=ExpenseCategory(row[3]),
-            expense_date=row[4],
+            user_id=UUID(str(row[1])),
+            amount=row[2],
+            description=row[3],
+            category=ExpenseCategory(row[4]),
+            expense_date=row[5],
         )

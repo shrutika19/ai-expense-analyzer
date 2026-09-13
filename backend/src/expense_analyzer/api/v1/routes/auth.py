@@ -8,6 +8,8 @@ from expense_analyzer.api.v1.schemas.auth import (
     TokenResponse
 )
 from expense_analyzer.services.auth_service import AuthService
+from expense_analyzer.api.v1.dependencies import get_current_user
+from expense_analyzer.domain.entities.user import User
 
 
 router = APIRouter(
@@ -44,3 +46,14 @@ def login(
         email=request.email,
         password=request.password,
     )
+
+
+@router.get(
+    "/user",
+    response_model=CurrentUserResponse,
+    status_code=status.HTTP_200_OK,
+)
+def get_user(
+    current_user: User = Depends(get_current_user),
+):
+    return current_user

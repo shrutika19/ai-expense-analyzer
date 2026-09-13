@@ -1,11 +1,16 @@
-from fastapi import APIRouter, Depends, status
 from uuid import UUID
 
-from expense_analyzer.api.v1.dependencies import get_expense_service
+from fastapi import APIRouter, Depends, status
+
+from expense_analyzer.api.v1.dependencies import (
+    get_current_user,
+    get_expense_service,
+)
 from expense_analyzer.api.v1.schemas.expense import (
     ExpenseCreateRequest,
     ExpenseResponse,
 )
+from expense_analyzer.domain.entities.user import User
 from expense_analyzer.services.expense_service import ExpenseService
 
 
@@ -22,12 +27,16 @@ router = APIRouter(
 )
 def create_expense(
     request: ExpenseCreateRequest,
+    current_user: User = Depends(get_current_user),
     service: ExpenseService = Depends(get_expense_service),
 ) -> ExpenseResponse:
-    expense = service.create_expense(request)
+
+    expense = service.create_expense(
+        request=request,
+        user_id=current_user.id,
+    )
 
     return ExpenseResponse.model_validate(expense)
-
 
 
 @router.get(
@@ -35,15 +44,18 @@ def create_expense(
     response_model=list[ExpenseResponse],
 )
 def get_expenses(
+    current_user: User = Depends(get_current_user),
     service: ExpenseService = Depends(get_expense_service),
 ) -> list[ExpenseResponse]:
-    expenses = service.get_expenses()
+
+    expenses = service.get_expenses(
+        user_id=current_user.id,
+    )
 
     return [
         ExpenseResponse.model_validate(expense)
         for expense in expenses
     ]
-
 
 
 @router.get(
@@ -52,8 +64,9 @@ def get_expenses(
 )
 def get_expense(
     expense_id: UUID,
+    current_user: User = Depends(get_current_user),
     service: ExpenseService = Depends(get_expense_service),
 ) -> ExpenseResponse:
-    expense = service.get_expense(expense_id)
+    expense = service.get_expense(expense_id, user_id=current_user.id)
 
     return ExpenseResponse.model_validate(expense)

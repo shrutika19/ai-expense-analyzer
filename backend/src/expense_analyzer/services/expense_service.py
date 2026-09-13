@@ -29,12 +29,14 @@ class ExpenseService:
     def create_expense(
         self,
         request: ExpenseCreateRequest,
+        user_id: UUID,
     ) -> Expense:
         expense = Expense(
             amount=request.amount,
             description=request.description,
             category=request.category,
             expense_date=request.expense_date,
+            user_id=user_id,
         )
     
         return self.repository.save(expense)
@@ -73,11 +75,11 @@ class ExpenseService:
 
         return expenses
 
-    def get_expenses(self) -> list[Expense]:
-        return self.repository.find_all()
+    def get_expenses(self, user_id: UUID,) -> list[Expense]:
+        return self.repository.find_all(user_id)
 
-    def get_expense(self, expense_id: UUID) -> Expense:
-        expense = self.repository.find_by_id(expense_id)
+    def get_expense(self, expense_id: UUID,user_id: UUID,) -> Expense:
+        expense = self.repository.find_by_id(expense_id,user_id)
 
         if expense is None:
             raise ExpenseNotFoundException(str(expense_id))
