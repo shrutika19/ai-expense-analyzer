@@ -20,6 +20,8 @@ class JWTService:
         payload = {
             "sub": str(user_id),
             "exp": expires_at,
+            "iss": settings.jwt_issuer,
+            "aud": settings.jwt_audience,
         }
 
         return jwt.encode(
@@ -34,6 +36,8 @@ class JWTService:
                 token,
                 settings.jwt_secret_key,
                 algorithms=[settings.jwt_algorithm],
+                issuer=settings.jwt_issuer,
+                audience=settings.jwt_audience,
             )
 
             subject = payload.get("sub")
