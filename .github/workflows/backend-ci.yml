@@ -77,6 +77,8 @@ jobs:
           JWT_SECRET_KEY=test-secret-key-for-ci
           JWT_ALGORITHM=HS256
           JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+          JWT_ISSUER=ai-expense-analyzer
+          JWT_AUDIENCE=ai-expense-analyzer-api
           EOF
 
       - name: Initialize database

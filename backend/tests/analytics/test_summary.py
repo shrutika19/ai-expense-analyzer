@@ -1,5 +1,6 @@
 from datetime import date
 from decimal import Decimal
+from uuid import uuid4
 
 from expense_analyzer.analytics.calculators.summary import (
     SummaryCalculator,
@@ -9,20 +10,24 @@ from expense_analyzer.domain.enums.expense_category import ExpenseCategory
 
 
 def create_expenses() -> list[Expense]:
+    user_id = uuid4()
     return [
         Expense(
+            user_id=user_id,
             amount=Decimal("100.00"),
             description="Lunch",
             category=ExpenseCategory.FOOD,
             expense_date=date(2026, 9, 1),
         ),
         Expense(
+            user_id=user_id,
             amount=Decimal("200.00"),
             description="Uber",
             category=ExpenseCategory.TRAVEL,
             expense_date=date(2026, 9, 2),
         ),
         Expense(
+            user_id=user_id,
             amount=Decimal("300.00"),
             description="Shopping",
             category=ExpenseCategory.SHOPPING,

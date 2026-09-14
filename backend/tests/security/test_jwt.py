@@ -42,6 +42,8 @@ def test_token_contains_subject():
         token,
         settings.jwt_secret_key,
         algorithms=[settings.jwt_algorithm],
+        issuer=settings.jwt_issuer,
+        audience=settings.jwt_audience,
     )
 
     assert payload["sub"] == user_id
