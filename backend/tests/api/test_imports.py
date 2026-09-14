@@ -1,14 +1,10 @@
 from io import BytesIO
 
-from fastapi.testclient import TestClient
-
-from expense_analyzer.main import app
 import json
 
-client = TestClient(app)
 
 
-def test_import_csv() -> None:
+def test_import_csv(client,auth_headers) -> None:
     csv_content = (
         "amount,description,category,expense_date\n"
         "100.00,Lunch,FOOD,2026-09-10\n"
@@ -24,6 +20,7 @@ def test_import_csv() -> None:
                 "text/csv",
             )
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 201
@@ -34,7 +31,7 @@ def test_import_csv() -> None:
     assert data["failed_count"] == 0
 
 
-def test_import_json() -> None:
+def test_import_json(client,auth_headers) -> None:
     json_content = json.dumps(
         [
             {
@@ -55,6 +52,7 @@ def test_import_json() -> None:
                 "application/json",
             )
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 201
@@ -65,7 +63,7 @@ def test_import_json() -> None:
 
 
 
-def test_import_unsupported_file() -> None:
+def test_import_unsupported_file(client,auth_headers) -> None:
     response = client.post(
         "/api/v1/expenses/import",
         files={
@@ -75,6 +73,7 @@ def test_import_unsupported_file() -> None:
                 "application/xml",
             )
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 415
@@ -86,7 +85,7 @@ def test_import_unsupported_file() -> None:
     )
 
 
-def test_import_rejects_mismatched_mime_type() -> None:
+def test_import_rejects_mismatched_mime_type(client,auth_headers) -> None:
     response = client.post(
         "/api/v1/expenses/import",
         files={
@@ -96,6 +95,7 @@ def test_import_rejects_mismatched_mime_type() -> None:
                 "application/json",
             )
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 415
@@ -104,7 +104,7 @@ def test_import_rejects_mismatched_mime_type() -> None:
     )
 
 
-def test_import_rejects_oversized_file() -> None:
+def test_import_rejects_oversized_file(client,auth_headers) -> None:
     oversized_content = b"a" * (5 * 1024 * 1024 + 1)
 
     response = client.post(
@@ -116,13 +116,14 @@ def test_import_rejects_oversized_file() -> None:
                 "text/csv",
             )
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 413
     assert response.json()["detail"]["code"] == "FILE_TOO_LARGE"
 
 
-def test_import_rejects_malformed_json() -> None:
+def test_import_rejects_malformed_json(client,auth_headers) -> None:
     response = client.post(
         "/api/v1/expenses/import",
         files={
@@ -132,6 +133,7 @@ def test_import_rejects_malformed_json() -> None:
                 "application/json",
             )
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 422
@@ -140,7 +142,7 @@ def test_import_rejects_malformed_json() -> None:
     )
 
 
-def test_import_rejects_csv_with_missing_columns() -> None:
+def test_import_rejects_csv_with_missing_columns(client,auth_headers) -> None:
     response = client.post(
         "/api/v1/expenses/import",
         files={
@@ -150,13 +152,14 @@ def test_import_rejects_csv_with_missing_columns() -> None:
                 "text/csv",
             )
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 422
     assert "missing required columns" in response.json()["detail"]
 
 
-def test_import_reports_invalid_rows_and_saves_valid_rows() -> None:
+def test_import_reports_invalid_rows_and_saves_valid_rows(client,auth_headers) -> None:
     csv_content = (
         "amount,description,category,expense_date\n"
         "100.00,Lunch,FOOD,2026-09-10\n"
@@ -172,6 +175,7 @@ def test_import_reports_invalid_rows_and_saves_valid_rows() -> None:
                 "text/csv",
             )
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 201
@@ -186,7 +190,7 @@ def test_import_reports_invalid_rows_and_saves_valid_rows() -> None:
     ]
 
 
-def test_import_skips_and_reports_duplicates() -> None:
+def test_import_skips_and_reports_duplicates(client,auth_headers) -> None:
     csv_content = (
         "amount,description,category,expense_date\n"
         "100.00,Lunch,FOOD,2026-09-10\n"
@@ -202,6 +206,7 @@ def test_import_skips_and_reports_duplicates() -> None:
                 "text/csv",
             )
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 201

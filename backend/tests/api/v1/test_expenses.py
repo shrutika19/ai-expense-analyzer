@@ -1,14 +1,7 @@
 from uuid import UUID
 
-from fastapi.testclient import TestClient
 
-from expense_analyzer.main import app
-
-
-client = TestClient(app)
-
-
-def test_create_expense() -> None:
+def test_create_expense(client,auth_headers) -> None:
     response = client.post(
         "/api/v1/expenses",
         json={
@@ -17,6 +10,7 @@ def test_create_expense() -> None:
             "category": "Food",
             "expense_date": "2026-09-09",
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 201
@@ -35,7 +29,7 @@ def test_create_expense() -> None:
 
 
 
-def test_create_expense_rejects_invalid_amount() -> None:
+def test_create_expense_rejects_invalid_amount(client,auth_headers) -> None:
     response = client.post(
         "/api/v1/expenses",
         json={
@@ -44,6 +38,7 @@ def test_create_expense_rejects_invalid_amount() -> None:
             "category": "Food",
             "expense_date": "2026-09-09",
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 422
@@ -51,7 +46,7 @@ def test_create_expense_rejects_invalid_amount() -> None:
 
 
 
-def test_create_expense_rejects_invalid_category() -> None:
+def test_create_expense_rejects_invalid_category(client,auth_headers) -> None:
     response = client.post(
         "/api/v1/expenses",
         json={
@@ -60,6 +55,7 @@ def test_create_expense_rejects_invalid_category() -> None:
             "category": "InvalidCategory",
             "expense_date": "2026-09-09",
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 422
@@ -67,7 +63,7 @@ def test_create_expense_rejects_invalid_category() -> None:
 
 
 
-def test_create_expense_rejects_missing_description() -> None:
+def test_create_expense_rejects_missing_description(client,auth_headers) -> None:
     response = client.post(
         "/api/v1/expenses",
         json={
@@ -75,6 +71,7 @@ def test_create_expense_rejects_missing_description() -> None:
             "category": "Food",
             "expense_date": "2026-09-09",
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 422
@@ -82,7 +79,7 @@ def test_create_expense_rejects_missing_description() -> None:
 
 
 
-def test_create_expense_rejects_extra_fields() -> None:
+def test_create_expense_rejects_extra_fields(client,auth_headers) -> None:
     response = client.post(
         "/api/v1/expenses",
         json={
@@ -92,13 +89,14 @@ def test_create_expense_rejects_extra_fields() -> None:
             "expense_date": "2026-09-09",
             "unexpected": "value",
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 422
 
 
 
-def test_create_expense_persists_to_database() -> None:
+def test_create_expense_persists_to_database(client,auth_headers) -> None:
     response = client.post(
         "/api/v1/expenses",
         json={
@@ -107,6 +105,7 @@ def test_create_expense_persists_to_database() -> None:
             "category": "Food",
             "expense_date": "2026-09-09",
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 201
@@ -121,7 +120,7 @@ def test_create_expense_persists_to_database() -> None:
 
 
 
-def test_get_expenses() -> None:
+def test_get_expenses(client,auth_headers) -> None:
     create_response = client.post(
         "/api/v1/expenses",
         json={
@@ -130,13 +129,14 @@ def test_get_expenses() -> None:
             "category": "Travel",
             "expense_date": "2026-09-08",
         },
+        headers=auth_headers,
     )
 
     assert create_response.status_code == 201
 
     created_expense = create_response.json()
 
-    response = client.get("/api/v1/expenses")
+    response = client.get("/api/v1/expenses", headers=auth_headers)
 
     assert response.status_code == 200
 
@@ -158,8 +158,11 @@ def test_get_expenses() -> None:
 
 
 
-def test_get_expenses_returns_list() -> None:
-    response = client.get("/api/v1/expenses")
+def test_get_expenses_returns_list(client, auth_headers) -> None:
+    response = client.get(
+        "/api/v1/expenses",
+        headers=auth_headers,
+    )
 
     assert response.status_code == 200
     assert isinstance(response.json(), list)

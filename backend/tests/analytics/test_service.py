@@ -1,5 +1,7 @@
 from decimal import Decimal
 from unittest.mock import Mock
+from uuid import uuid4
+
 
 from expense_analyzer.analytics.calculators.category import (
     CategoryCalculator,
@@ -30,8 +32,10 @@ def create_service(
 
 
 def test_get_summary() -> None:
+    user_id = uuid4()
     expenses = [
         Expense(
+            user_id=user_id,
             amount=Decimal("100.00"),
             description="Food",
             category=ExpenseCategory.FOOD,
@@ -42,6 +46,7 @@ def test_get_summary() -> None:
             ),
         ),
         Expense(
+            user_id=user_id,
             amount=Decimal("200.00"),
             description="Transport",
             category=ExpenseCategory.TRANSPORT,
@@ -58,16 +63,17 @@ def test_get_summary() -> None:
 
     service = create_service(repository)
 
-    result = service.get_summary()
+    result = service.get_summary(user_id)
 
     assert result.total_amount == Decimal("300.00")
     assert result.expense_count == 2
-    repository.find_all.assert_called_once()
-
+    repository.find_all.assert_called_once_with(user_id)
 
 def test_get_category_summary() -> None:
+    user_id = uuid4()
     expenses = [
         Expense(
+            user_id=user_id,
             amount=Decimal("100.00"),
             description="Food",
             category=ExpenseCategory.FOOD,
@@ -78,6 +84,7 @@ def test_get_category_summary() -> None:
             ),
         ),
         Expense(
+            user_id=user_id,
             amount=Decimal("50.00"),
             description="Food",
             category=ExpenseCategory.FOOD,
@@ -94,17 +101,20 @@ def test_get_category_summary() -> None:
 
     service = create_service(repository)
 
-    result = service.get_category_summary()
+    result = service.get_category_summary(user_id)
 
     assert len(result) == 1
     assert result[0].category == ExpenseCategory.FOOD.value
     assert result[0].total_amount == Decimal("150.00")
     assert result[0].expense_count == 2
+    repository.find_all.assert_called_once_with(user_id)
 
 
 def test_get_monthly_summary() -> None:
+    user_id = uuid4()
     expenses = [
         Expense(
+            user_id=user_id,
             amount=Decimal("100.00"),
             description="Food",
             category=ExpenseCategory.FOOD,
@@ -115,6 +125,7 @@ def test_get_monthly_summary() -> None:
             ),
         ),
         Expense(
+            user_id=user_id,
             amount=Decimal("200.00"),
             description="Transport",
             category=ExpenseCategory.TRANSPORT,
@@ -131,8 +142,9 @@ def test_get_monthly_summary() -> None:
 
     service = create_service(repository)
 
-    result = service.get_monthly_summary()
+    result = service.get_monthly_summary(user_id)
 
     assert len(result) == 2
     assert result[0].month == "2026-01"
     assert result[1].month == "2026-02"
+    repository.find_all.assert_called_once_with(user_id)

@@ -1,18 +1,19 @@
 from typing import Any
 from uuid import UUID
+
 from expense_analyzer.api.v1.schemas.expense import (
     ExpenseCreateRequest,
 )
 from expense_analyzer.domain.entities.expense import Expense
-from expense_analyzer.preprocessing.pipeline import PreprocessingPipeline
-from expense_analyzer.validation.validators.expense_validator import (
-    ExpenseValidationModel,
+from expense_analyzer.exceptions.api import (
+    ExpenseNotFoundException,
 )
+from expense_analyzer.preprocessing.pipeline import PreprocessingPipeline
 from expense_analyzer.repositories.expense_repository import (
     ExpenseRepository,
 )
-from expense_analyzer.exceptions.api import (
-    ExpenseNotFoundException,
+from expense_analyzer.validation.validators.expense_validator import (
+    ExpenseValidationModel,
 )
 
 
@@ -38,12 +39,13 @@ class ExpenseService:
             expense_date=request.expense_date,
             user_id=user_id,
         )
-    
+
         return self.repository.save(expense)
 
     def process_records(
         self,
         records: list[dict[str, Any]],
+        user_id: UUID,
     ) -> list[Expense]:
         processed_records = self.preprocessing_pipeline.process(
             records
@@ -60,11 +62,15 @@ class ExpenseService:
                 for key, value in record.items()
                 if key != "_is_duplicate"
             }
-            validated_record = ExpenseValidationModel.model_validate(
-                expense_record
+
+            validated_record = (
+                ExpenseValidationModel.model_validate(
+                    expense_record
+                )
             )
 
             expense = Expense(
+                user_id=user_id,
                 amount=validated_record.amount,
                 description=validated_record.description,
                 category=validated_record.category,
@@ -75,13 +81,25 @@ class ExpenseService:
 
         return expenses
 
-    def get_expenses(self, user_id: UUID,) -> list[Expense]:
+    def get_expenses(
+        self,
+        user_id: UUID,
+    ) -> list[Expense]:
         return self.repository.find_all(user_id)
 
-    def get_expense(self, expense_id: UUID,user_id: UUID,) -> Expense:
-        expense = self.repository.find_by_id(expense_id,user_id)
+    def get_expense(
+        self,
+        expense_id: UUID,
+        user_id: UUID,
+    ) -> Expense:
+        expense = self.repository.find_by_id(
+            expense_id,
+            user_id,
+        )
 
         if expense is None:
-            raise ExpenseNotFoundException(str(expense_id))
+            raise ExpenseNotFoundException(
+                str(expense_id)
+            )
 
         return expense

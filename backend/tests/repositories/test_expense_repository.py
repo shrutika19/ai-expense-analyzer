@@ -8,10 +8,11 @@ from expense_analyzer.repositories.expense_repository import (
 )
 
 
-def test_save_expense() -> None:
+def test_save_expense(test_user) -> None:
     repository = ExpenseRepository()
 
     expense = Expense(
+        user_id=test_user.id,
         amount=Decimal("250.50"),
         description="Lunch",
         category=ExpenseCategory.FOOD,
@@ -29,10 +30,11 @@ def test_save_expense() -> None:
 
 
 
-def test_find_all_expenses() -> None:
+def test_find_all_expenses(test_user) -> None:
     repository = ExpenseRepository()
 
     expense = Expense(
+        user_id=test_user.id,
         amount=Decimal("500.00"),
         description="Uber",
         category=ExpenseCategory.TRAVEL,
@@ -41,7 +43,7 @@ def test_find_all_expenses() -> None:
 
     repository.save(expense)
 
-    result = repository.find_all()
+    result = repository.find_all(test_user.id)
 
     assert len(result) >= 1
 
@@ -55,3 +57,4 @@ def test_find_all_expenses() -> None:
     assert saved_expense.description == "Uber"
     assert saved_expense.category == ExpenseCategory.TRAVEL
     assert saved_expense.expense_date == date(2026, 9, 8)
+    

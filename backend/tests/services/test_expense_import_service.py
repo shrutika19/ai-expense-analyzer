@@ -2,6 +2,7 @@ from pathlib import Path
 from datetime import date
 from decimal import Decimal
 from unittest.mock import Mock, patch
+from uuid import uuid4
 
 from expense_analyzer.domain.entities.expense import Expense
 from expense_analyzer.domain.enums.expense_category import ExpenseCategory
@@ -17,8 +18,10 @@ from expense_analyzer.services.expense_import_service import (
 def test_import_expenses() -> None:
     repository = Mock(spec=ExpenseRepository)
     pipeline = Mock()
+    user_id = uuid4()
 
     expense = Expense(
+        user_id=user_id,
         amount=Decimal("100.00"),
         description="Lunch",
         category=ExpenseCategory.FOOD,
@@ -60,7 +63,8 @@ def test_import_expenses() -> None:
         factory.return_value = strategy
 
         result = service.import_expenses(
-            Path("expenses.csv")
+            Path("expenses.csv"),
+            user_id,
         )
 
     assert len(result) == 1
@@ -75,6 +79,7 @@ def test_import_expenses() -> None:
     repository.save_many.assert_called_once()
     saved_expense = repository.save_many.call_args.args[0][0]
     assert saved_expense.id is not None
+    assert saved_expense.user_id == user_id
     assert saved_expense.amount == expense.amount
     assert saved_expense.description == expense.description
     assert saved_expense.category == expense.category
@@ -82,6 +87,7 @@ def test_import_expenses() -> None:
 
 
 def test_import_expenses_skips_and_reports_duplicates() -> None:
+    user_id = uuid4()
     repository = Mock(spec=ExpenseRepository)
     repository.save_many.side_effect = lambda expenses: expenses
     pipeline = PreprocessingPipeline(processors=[])
@@ -113,7 +119,7 @@ def test_import_expenses_skips_and_reports_duplicates() -> None:
         strategy.read.return_value = raw_records
         factory.return_value = strategy
 
-        result = service.import_expenses_detailed(Path("expenses.csv"))
+        result = service.import_expenses_detailed(Path("expenses.csv"),user_id=user_id,)
 
     assert len(result.expenses) == 1
     assert result.skipped_duplicates == 1

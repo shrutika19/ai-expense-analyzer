@@ -1,6 +1,7 @@
 from datetime import date
 from decimal import Decimal
 from unittest.mock import Mock
+from uuid import uuid4
 
 from expense_analyzer.analytics.calculators.category import (
     CategoryCalculator,
@@ -65,6 +66,7 @@ def convert_to_expenses(
     records: list[dict],
 ) -> list[Expense]:
     expenses = []
+    user_id = uuid4()
 
     for record in records:
         if record["_is_duplicate"]:
@@ -79,6 +81,7 @@ def convert_to_expenses(
 
         expenses.append(
             Expense(
+                user_id=user_id,
                 amount=validated.amount,
                 description=validated.description,
                 category=validated.category,
@@ -123,9 +126,11 @@ def test_preprocessing_validation_and_analytics_flow() -> None:
     repository.find_all.return_value = expenses
     service = create_analytics_service(repository)
 
-    summary = service.get_summary()
-    category_summary = service.get_category_summary()
-    monthly_summary = service.get_monthly_summary()
+    user_id = expenses[0].user_id
+
+    summary = service.get_summary(user_id)
+    category_summary = service.get_category_summary(user_id)
+    monthly_summary = service.get_monthly_summary(user_id)
 
     assert len(expenses) == 2
 
