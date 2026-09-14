@@ -18,11 +18,17 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE_EXPENSES_TABLE = """
 CREATE TABLE IF NOT EXISTS expenses (
     id UUID PRIMARY KEY,
+    user_id UUID NOT NULL,
     amount NUMERIC(12, 2) NOT NULL,
     description VARCHAR(500) NOT NULL,
     category VARCHAR(50) NOT NULL,
     expense_date DATE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_expenses_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
 );
 """
 
@@ -32,3 +38,5 @@ def initialize_database() -> None:
         with connection.cursor() as cursor:
             cursor.execute(CREATE_USERS_TABLE)
             cursor.execute(CREATE_EXPENSES_TABLE)
+
+        connection.commit()
