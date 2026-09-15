@@ -44,7 +44,7 @@ class CategoryBaselineExperiment:
         )
 
         self.classifier = LogisticRegression(
-            max_iter=1000,
+            max_iter=3000,
             random_state=42,
         )
 

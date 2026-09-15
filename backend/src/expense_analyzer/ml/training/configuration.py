@@ -11,7 +11,7 @@ class TfidfConfiguration:
 
 @dataclass(frozen=True)
 class LogisticRegressionConfiguration:
-    max_iterations: int = 1000
+    max_iterations: int = 3000
     random_state: int = 42
 
 
