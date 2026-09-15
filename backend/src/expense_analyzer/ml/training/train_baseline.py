@@ -6,6 +6,9 @@ from expense_analyzer.ml.training.configuration import (
 from expense_analyzer.ml.training.trainer import (
     CategoryModelTrainer,
 )
+from expense_analyzer.ml.training.model_storage import (
+    ModelStorage,
+)
 
 
 def train_model_a(
@@ -20,6 +23,9 @@ def train_model_a(
 
     Model:
         Logistic Regression
+
+    The complete TrainedModel is saved so that the fitted
+    TF-IDF pipeline can be reused during evaluation.
     """
 
     configuration = TrainingConfiguration(
@@ -33,6 +39,17 @@ def train_model_a(
     trained_model = trainer.train(
         X_train=X_train,
         y_train=y_train,
+    )
+
+    # Save the COMPLETE trained model.
+    # This includes:
+    #   - fitted Logistic Regression classifier
+    #   - fitted TF-IDF feature pipeline
+    storage = ModelStorage()
+
+    storage.save(
+        model=trained_model,
+        filename="model_a.joblib",
     )
 
     metadata = trained_model.feature_pipeline.get_metadata()
@@ -53,12 +70,22 @@ def train_model_a(
             ),
         },
         "tfidf_configuration": {
-            "lowercase": configuration.tfidf.lowercase,
-            "ngram_range": configuration.tfidf.ngram_range,
-            "min_df": configuration.tfidf.min_df,
-            "max_features": configuration.tfidf.max_features,
+            "lowercase": (
+                configuration.tfidf.lowercase
+            ),
+            "ngram_range": (
+                configuration.tfidf.ngram_range
+            ),
+            "min_df": (
+                configuration.tfidf.min_df
+            ),
+            "max_features": (
+                configuration.tfidf.max_features
+            ),
         },
-        "amount_included": configuration.include_amount,
+        "amount_included": (
+            configuration.include_amount
+        ),
     }
 
     return trained_model, benchmark
@@ -77,6 +104,10 @@ def train_model_b(
 
     Model:
         Logistic Regression
+
+    The complete TrainedModel is saved so that the fitted
+    TF-IDF + amount feature pipeline can be reused during
+    evaluation.
     """
 
     configuration = TrainingConfiguration(
@@ -90,6 +121,17 @@ def train_model_b(
     trained_model = trainer.train(
         X_train=X_train,
         y_train=y_train,
+    )
+
+    # Save the COMPLETE trained model.
+    # This includes:
+    #   - fitted Logistic Regression classifier
+    #   - fitted TF-IDF + amount feature pipeline
+    storage = ModelStorage()
+
+    storage.save(
+        model=trained_model,
+        filename="model_b.joblib",
     )
 
     metadata = trained_model.feature_pipeline.get_metadata()
@@ -110,12 +152,22 @@ def train_model_b(
             ),
         },
         "tfidf_configuration": {
-            "lowercase": configuration.tfidf.lowercase,
-            "ngram_range": configuration.tfidf.ngram_range,
-            "min_df": configuration.tfidf.min_df,
-            "max_features": configuration.tfidf.max_features,
+            "lowercase": (
+                configuration.tfidf.lowercase
+            ),
+            "ngram_range": (
+                configuration.tfidf.ngram_range
+            ),
+            "min_df": (
+                configuration.tfidf.min_df
+            ),
+            "max_features": (
+                configuration.tfidf.max_features
+            ),
         },
-        "amount_included": configuration.include_amount,
+        "amount_included": (
+            configuration.include_amount
+        ),
     }
 
     return trained_model, benchmark

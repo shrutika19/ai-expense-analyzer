@@ -1,15 +1,13 @@
 from dataclasses import dataclass
 
-from expense_analyzer.ml.evaluation.metrics import (
-    ClassificationMetrics,
+from expense_analyzer.ml.evaluation.result import (
+    ModelEvaluationResult,
 )
 
 
 @dataclass(frozen=True)
 class ModelComparison:
-    """
-    Describes the baseline models being compared.
-    """
+    """Describes and compares the two baseline models."""
 
     model_a_name: str = (
         "baseline_tfidf_logistic_model_a"
@@ -31,6 +29,6 @@ class ModelComparison:
 
     model_b_amount_included: bool = True
 
-    model_a_metrics: ClassificationMetrics | None = None
+    model_a_metrics: ModelEvaluationResult | None = None
 
-    model_b_metrics: ClassificationMetrics | None = None
+    model_b_metrics: ModelEvaluationResult | None = None
