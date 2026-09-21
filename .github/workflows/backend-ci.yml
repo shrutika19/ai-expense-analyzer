@@ -94,21 +94,28 @@ jobs:
           EOF
 
       # ---------------------------------------------------------
-      # 5. Initialize database
+      # 5. Initialize database schema
       # ---------------------------------------------------------
       - name: Initialize database
         run: |
           python scripts/init_db.py
 
       # ---------------------------------------------------------
-      # 6. Generate and publish ML model
+      # 6. Seed deterministic ML training dataset
+      # ---------------------------------------------------------
+      - name: Seed ML training dataset
+        run: |
+          python scripts/seed_ml_dataset.py
+
+      # ---------------------------------------------------------
+      # 7. Publish ML model
       # ---------------------------------------------------------
       - name: Publish ML model
         run: |
           python -m expense_analyzer.ml.training.publish_model
 
       # ---------------------------------------------------------
-      # 7. Verify ML model artifact
+      # 8. Verify generated ML artifacts
       # ---------------------------------------------------------
       - name: Verify ML model artifact
         run: |
@@ -117,7 +124,7 @@ jobs:
           echo "ML model artifact is available"
 
       # ---------------------------------------------------------
-      # 8. Run tests
+      # 9. Run backend tests
       # ---------------------------------------------------------
       - name: Run tests
         run: |
