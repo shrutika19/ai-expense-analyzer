@@ -173,3 +173,47 @@ def test_prediction_confidence_matches_predicted_category_probability():
         expected_confidence,
         abs=1e-6,
     )
+
+
+
+def test_inference_is_deterministic_for_same_input():
+    from expense_analyzer.ml.inference.predictor import MLPredictor
+    from expense_analyzer.ml.models.category_prediction import (
+        CategoryPredictionInput,
+    )
+    from expense_analyzer.ml.models.loader import ModelBundleLoader
+
+    model_bundle = ModelBundleLoader(
+        "artifacts/models"
+    ).load(
+        "expense_category",
+        "v1.0.0",
+    )
+
+    predictor = MLPredictor()
+
+    prediction_input = CategoryPredictionInput(
+        description="Uber ride to office",
+        amount=250.0,
+    )
+
+    first_result = predictor.predict(
+        model_bundle,
+        prediction_input,
+    )
+
+    second_result = predictor.predict(
+        model_bundle,
+        prediction_input,
+    )
+
+    third_result = predictor.predict(
+        model_bundle,
+        prediction_input,
+    )
+
+    assert first_result.predicted_category == second_result.predicted_category
+    assert second_result.predicted_category == third_result.predicted_category
+
+    assert first_result.confidence == second_result.confidence
+    assert second_result.confidence == third_result.confidence
