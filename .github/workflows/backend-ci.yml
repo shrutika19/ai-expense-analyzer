@@ -94,27 +94,27 @@ jobs:
           EOF
 
       # ---------------------------------------------------------
-      # 5. Generate and publish ML model
+      # 5. Initialize database
+      # ---------------------------------------------------------
+      - name: Initialize database
+        run: |
+          python scripts/init_db.py
+
+      # ---------------------------------------------------------
+      # 6. Generate and publish ML model
       # ---------------------------------------------------------
       - name: Publish ML model
         run: |
           python -m expense_analyzer.ml.training.publish_model
 
       # ---------------------------------------------------------
-      # 6. Verify ML model artifact
+      # 7. Verify ML model artifact
       # ---------------------------------------------------------
       - name: Verify ML model artifact
         run: |
           test -f artifacts/models/expense_category/v1.0.0/model.joblib
           test -f artifacts/models/expense_category/v1.0.0/metadata.json
           echo "ML model artifact is available"
-
-      # ---------------------------------------------------------
-      # 7. Initialize database
-      # ---------------------------------------------------------
-      - name: Initialize database
-        run: |
-          python scripts/init_db.py
 
       # ---------------------------------------------------------
       # 8. Run tests
