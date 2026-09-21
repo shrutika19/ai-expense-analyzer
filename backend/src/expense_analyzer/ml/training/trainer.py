@@ -9,6 +9,9 @@ from expense_analyzer.domain.enums.expense_category import (
 from expense_analyzer.ml.features.feature_pipeline import (
     FeaturePipeline,
 )
+from expense_analyzer.ml.features.text_features import (
+    TfidfFeatureExtractor,
+)
 from expense_analyzer.ml.training.configuration import (
     TrainingConfiguration,
 )
@@ -101,7 +104,15 @@ class CategoryModelTrainer:
     def _create_feature_pipeline(
         self,
     ) -> FeaturePipeline:
+        tfidf_configuration = self.configuration.tfidf
+
         return FeaturePipeline(
+            text_extractor=TfidfFeatureExtractor(
+                lowercase=tfidf_configuration.lowercase,
+                ngram_range=tfidf_configuration.ngram_range,
+                min_df=tfidf_configuration.min_df,
+                max_features=tfidf_configuration.max_features,
+            ),
             include_amount=(
                 self.configuration.include_amount
             ),
@@ -126,6 +137,12 @@ class CategoryModelTrainer:
             raise ValueError(
                 "Training features and target must have "
                 "the same number of rows."
+            )
+
+        if y_train.name != self.CATEGORY_COLUMN:
+            raise ValueError(
+                "Training target must be the "
+                f"'{self.CATEGORY_COLUMN}' column."
             )
 
         if y_train.isna().any():

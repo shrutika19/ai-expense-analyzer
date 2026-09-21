@@ -1,19 +1,20 @@
 import pandas as pd
 
+from expense_analyzer.ml.training.experiment import (
+    create_experiment_metadata,
+)
 from expense_analyzer.ml.training.configuration import (
     TrainingConfiguration,
 )
 from expense_analyzer.ml.training.trainer import (
     CategoryModelTrainer,
 )
-from expense_analyzer.ml.training.model_storage import (
-    ModelStorage,
-)
 
 
 def train_model_a(
     X_train: pd.DataFrame,
     y_train: pd.Series,
+    test_row_count: int = 0,
 ):
     """
     Train baseline Model A.
@@ -24,8 +25,7 @@ def train_model_a(
     Model:
         Logistic Regression
 
-    The complete TrainedModel is saved so that the fitted
-    TF-IDF pipeline can be reused during evaluation.
+    Returns the in-memory classifier and fitted TF-IDF pipeline.
     """
 
     configuration = TrainingConfiguration(
@@ -39,17 +39,6 @@ def train_model_a(
     trained_model = trainer.train(
         X_train=X_train,
         y_train=y_train,
-    )
-
-    # Save the COMPLETE trained model.
-    # This includes:
-    #   - fitted Logistic Regression classifier
-    #   - fitted TF-IDF feature pipeline
-    storage = ModelStorage()
-
-    storage.save(
-        model=trained_model,
-        filename="model_a.joblib",
     )
 
     metadata = trained_model.feature_pipeline.get_metadata()
@@ -88,12 +77,21 @@ def train_model_a(
         ),
     }
 
+    benchmark["experiment"] = create_experiment_metadata(
+        experiment_name="baseline_tfidf_logistic_model_a",
+        configuration=configuration,
+        training_row_count=len(X_train),
+        test_row_count=test_row_count,
+        number_of_categories=y_train.nunique(),
+    )
+
     return trained_model, benchmark
 
 
 def train_model_b(
     X_train: pd.DataFrame,
     y_train: pd.Series,
+    test_row_count: int = 0,
 ):
     """
     Train baseline Model B.
@@ -105,9 +103,7 @@ def train_model_b(
     Model:
         Logistic Regression
 
-    The complete TrainedModel is saved so that the fitted
-    TF-IDF + amount feature pipeline can be reused during
-    evaluation.
+    Returns the in-memory classifier and fitted feature pipeline.
     """
 
     configuration = TrainingConfiguration(
@@ -121,17 +117,6 @@ def train_model_b(
     trained_model = trainer.train(
         X_train=X_train,
         y_train=y_train,
-    )
-
-    # Save the COMPLETE trained model.
-    # This includes:
-    #   - fitted Logistic Regression classifier
-    #   - fitted TF-IDF + amount feature pipeline
-    storage = ModelStorage()
-
-    storage.save(
-        model=trained_model,
-        filename="model_b.joblib",
     )
 
     metadata = trained_model.feature_pipeline.get_metadata()
@@ -169,5 +154,13 @@ def train_model_b(
             configuration.include_amount
         ),
     }
+
+    benchmark["experiment"] = create_experiment_metadata(
+        experiment_name="baseline_tfidf_logistic_model_b",
+        configuration=configuration,
+        training_row_count=len(X_train),
+        test_row_count=test_row_count,
+        number_of_categories=y_train.nunique(),
+    )
 
     return trained_model, benchmark

@@ -7,6 +7,10 @@ from expense_analyzer.domain.enums.expense_category import (
 from expense_analyzer.ml.features.feature_pipeline import (
     FeaturePipeline,
 )
+from expense_analyzer.ml.training.configuration import (
+    TfidfConfiguration,
+    TrainingConfiguration,
+)
 from expense_analyzer.ml.training.trainer import (
     CategoryModelTrainer,
     TrainedModel,
@@ -179,6 +183,22 @@ def test_missing_target():
     with pytest.raises(
         ValueError,
         match="Training target cannot contain missing values",
+    ):
+        trainer.train(
+            X_train,
+            y_train,
+        )
+
+
+def test_target_must_be_category_column():
+    X_train, y_train = create_training_data()
+    y_train.name = "target"
+
+    trainer = CategoryModelTrainer()
+
+    with pytest.raises(
+        ValueError,
+        match="Training target must be the 'category' column",
     ):
         trainer.train(
             X_train,
@@ -439,3 +459,30 @@ def test_feature_pipeline_is_fitted_only_on_training_data():
     )
 
     assert vocabulary_before == vocabulary_after
+
+
+def test_trainer_uses_configured_tfidf_settings():
+    X_train, y_train = create_training_data()
+
+    configuration = TrainingConfiguration(
+        tfidf=TfidfConfiguration(
+            lowercase=False,
+            ngram_range=(1, 1),
+            min_df=1,
+            max_features=2,
+        ),
+    )
+
+    trained_model = CategoryModelTrainer(
+        configuration=configuration,
+    ).train(
+        X_train,
+        y_train,
+    )
+
+    metadata = trained_model.feature_pipeline.get_metadata()
+
+    assert metadata.tfidf.lowercase is False
+    assert metadata.tfidf.ngram_range == (1, 1)
+    assert metadata.tfidf.min_df == 1
+    assert metadata.tfidf.max_features == 2

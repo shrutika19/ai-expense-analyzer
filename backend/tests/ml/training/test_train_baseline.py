@@ -1,11 +1,15 @@
 import pandas as pd
 
+import expense_analyzer.ml.training.train_baseline as train_baseline
 from expense_analyzer.domain.enums.expense_category import (
     ExpenseCategory,
 )
 from expense_analyzer.ml.training.train_baseline import (
     train_model_a,
     train_model_b,
+)
+from expense_analyzer.ml.training.experiment import (
+    ExperimentMetadata,
 )
 
 
@@ -94,6 +98,34 @@ def test_model_b_includes_amount():
 
     assert benchmark["model"] == "Model B"
     assert benchmark["amount_included"] is True
+
+
+def test_baseline_training_does_not_depend_on_model_storage():
+    assert not hasattr(train_baseline, "ModelStorage")
+
+
+def test_model_a_records_experiment_metadata():
+    X_train, y_train = create_training_data()
+
+    _, benchmark = train_model_a(
+        X_train,
+        y_train,
+        test_row_count=2,
+    )
+
+    experiment = benchmark["experiment"]
+
+    assert isinstance(experiment, ExperimentMetadata)
+    assert experiment.experiment_name == (
+        "baseline_tfidf_logistic_model_a"
+    )
+    assert experiment.model_type == "LogisticRegression"
+    assert experiment.training_row_count == len(X_train)
+    assert experiment.test_row_count == 2
+    assert experiment.number_of_categories == y_train.nunique()
+    assert experiment.feature_configuration["amount_included"] is False
+    assert experiment.random_state == 42
+    assert experiment.model_parameters["max_iterations"] == 1000
 
 
 def test_model_a_records_training_sample_count():

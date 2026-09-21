@@ -3,6 +3,7 @@ from decimal import Decimal
 import pytest
 from pydantic import ValidationError
 
+
 from expense_analyzer.domain.enums.expense_category import ExpenseCategory
 from expense_analyzer.validation.validators.expense_validator import (
     ExpenseValidationModel,

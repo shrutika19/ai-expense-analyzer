@@ -1,3 +1,11 @@
+import pandas as pd
+
+from expense_analyzer.ml.evaluation.analysis import (
+    create_evaluated_predictions,
+    find_top_confusions,
+    summarize_confidence,
+    validate_probabilities,
+)
 from expense_analyzer.ml.evaluation.metrics import (
     calculate_accuracy,
     calculate_confusion_matrix,
@@ -51,6 +59,16 @@ class ModelEvaluator:
         y_pred = model.classifier.predict(
             X_test_features
         )
+        probabilities = model.classifier.predict_proba(
+            X_test_features
+        )
+
+        if len(probabilities) != len(y_test):
+            raise ValueError(
+                "Prediction probabilities must match the test data length."
+            )
+
+        validate_probabilities(probabilities)
 
         # --------------------------------------------------
         # Step 6 / Step 7: Overall metrics.
@@ -113,6 +131,13 @@ class ModelEvaluator:
             labels=labels,
         )
 
+        evaluated_predictions = create_evaluated_predictions(
+            descriptions=self._get_descriptions(X_test),
+            y_true=y_test,
+            y_pred=y_pred,
+            probabilities=probabilities,
+        )
+
         # --------------------------------------------------
         # Step 8: Return structured evaluation result.
         # --------------------------------------------------
@@ -129,4 +154,21 @@ class ModelEvaluator:
             per_category_metrics=per_category_metrics,
             confusion_matrix=matrix,
             labels=tuple(labels),
+            evaluated_predictions=evaluated_predictions,
+            confidence_summary=summarize_confidence(
+                evaluated_predictions
+            ),
+            top_confusions=find_top_confusions(
+                matrix,
+                tuple(labels),
+            ),
         )
+
+    def _get_descriptions(
+        self,
+        X_test,
+    ) -> list[str]:
+        if isinstance(X_test, pd.DataFrame):
+            return X_test["description"].astype(str).tolist()
+
+        return [str(record["description"]) for record in X_test]
