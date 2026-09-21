@@ -20,6 +20,11 @@ from expense_analyzer.ml.models.persistence import (
 )
 from expense_analyzer.ml.training.trainer import CategoryModelTrainer
 
+from expense_analyzer.ml.exceptions import (
+    ModelArtifactNotFoundError,
+    ModelCompatibilityError,
+)
+
 
 def create_evaluation_metrics() -> ModelEvaluationResult:
     return ModelEvaluationResult(
@@ -167,44 +172,118 @@ def test_loaded_pipeline_reproduces_training_feature_vectors(tmp_path):
     )
 
 
-def test_loader_rejects_missing_wrong_corrupt_and_invalid_artifacts(tmp_path):
+def test_loader_rejects_missing_wrong_corrupt_and_invalid_artifacts(
+    tmp_path,
+):
     loader = ModelBundleLoader(tmp_path)
 
-    with pytest.raises(FileNotFoundError):
-        loader.load("expense_category", "v1.0.0")
+    with pytest.raises(
+        ModelArtifactNotFoundError,
+        match="Model not found",
+    ):
+        loader.load(
+            "expense_category",
+            "v1.0.0",
+        )
 
     create_saved_bundle(tmp_path)
 
-    with pytest.raises(FileNotFoundError):
-        loader.load("expense_category", "v9.0.0")
+    with pytest.raises(
+        ModelArtifactNotFoundError,
+        match="Model version 'v9.0.0' not found",
+    ):
+        loader.load(
+            "expense_category",
+            "v9.0.0",
+        )
 
     metadata_path = (
-        tmp_path / "expense_category" / "v1.0.0" / "metadata.json"
+        tmp_path
+        / "expense_category"
+        / "v1.0.0"
+        / "metadata.json"
     )
-    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-    metadata["algorithm"] = "InvalidAlgorithm"
-    metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
 
-    with pytest.raises(ValueError, match="algorithm"):
-        loader.load("expense_category", "v1.0.0")
+    metadata = json.loads(
+        metadata_path.read_text(
+            encoding="utf-8"
+        )
+    )
+
+    metadata["algorithm"] = "InvalidAlgorithm"
+
+    metadata_path.write_text(
+        json.dumps(metadata),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ModelCompatibilityError,
+        match="incompatible",
+    ):
+        loader.load(
+            "expense_category",
+            "v1.0.0",
+        )
 
     metadata["algorithm"] = "LogisticRegression"
-    metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
-    model_path = tmp_path / "expense_category" / "v1.0.0" / "model.joblib"
+
+    metadata_path.write_text(
+        json.dumps(metadata),
+        encoding="utf-8",
+    )
+
+    model_path = (
+        tmp_path
+        / "expense_category"
+        / "v1.0.0"
+        / "model.joblib"
+    )
+
     model_path.write_bytes(b"corrupted")
 
-    with pytest.raises(ValueError, match="checksum"):
-        loader.load("expense_category", "v1.0.0")
+    with pytest.raises(
+        ModelCompatibilityError,
+        match="checksum",
+    ):
+        loader.load(
+            "expense_category",
+            "v1.0.0",
+        )
 
 
-def test_loader_rejects_incompatible_runtime_environment(tmp_path):
+def test_loader_rejects_incompatible_runtime_environment(
+    tmp_path,
+):
     create_saved_bundle(tmp_path)
-    metadata_path = (
-        tmp_path / "expense_category" / "v1.0.0" / "metadata.json"
-    )
-    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-    metadata["runtime_environment"]["scikit_learn"] = "0.24.0"
-    metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
 
-    with pytest.raises(ValueError, match="scikit_learn"):
-        ModelBundleLoader(tmp_path).load("expense_category", "v1.0.0")
+    metadata_path = (
+        tmp_path
+        / "expense_category"
+        / "v1.0.0"
+        / "metadata.json"
+    )
+
+    metadata = json.loads(
+        metadata_path.read_text(
+            encoding="utf-8"
+        )
+    )
+
+    metadata["runtime_environment"]["scikit_learn"] = (
+        "0.24.0"
+    )
+
+    metadata_path.write_text(
+        json.dumps(metadata),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ModelCompatibilityError,
+        match="incompatible",
+    ):
+        ModelBundleLoader(tmp_path).load(
+            "expense_category",
+            "v1.0.0",
+        )

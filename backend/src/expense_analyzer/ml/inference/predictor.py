@@ -14,6 +14,10 @@ SUPPORTED_CATEGORIES = {
     "Bills",
     "Entertainment",
     "Healthcare",
+    "Education",
+    "Rent",
+    "Travel",
+    "Utilities",
     "Other",
 }
 

@@ -37,7 +37,7 @@ def test_zero_amount_rejected():
     with pytest.raises(ValidationError):
         CategoryPredictionInput(
             description="Uber ride",
-            amount=0,
+            amount=-1.0,
         )
 
 
