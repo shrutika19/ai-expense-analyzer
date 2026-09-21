@@ -110,3 +110,66 @@ def test_real_model_can_process_multiple_predictions(
     for result in results:
         assert result.predicted_category
         assert 0.0 <= result.confidence <= 1.0
+
+
+
+def test_prediction_confidence_matches_predicted_category_probability():
+    from expense_analyzer.ml.inference.predictor import MLPredictor
+    from expense_analyzer.ml.models.category_prediction import (
+        CategoryPredictionInput,
+    )
+    from expense_analyzer.ml.models.loader import ModelBundleLoader
+
+    model_bundle = ModelBundleLoader(
+        "artifacts/models"
+    ).load(
+        "expense_category",
+        "v1.0.0",
+    )
+
+    prediction_input = CategoryPredictionInput(
+        description="Uber ride to office",
+        amount=250.0,
+    )
+
+    predictor = MLPredictor()
+
+    result = predictor.predict(
+        model_bundle,
+        prediction_input,
+    )
+
+    # Reproduce the model probability output.
+    import pandas as pd
+
+    dataframe = pd.DataFrame(
+        [
+            {
+                "description": prediction_input.description,
+                "amount": prediction_input.amount,
+            }
+        ]
+    )
+
+    features = model_bundle.feature_pipeline.transform(
+        dataframe
+    )
+
+    probabilities = model_bundle.classifier.predict_proba(
+        features
+    )
+
+    classes = model_bundle.classifier.classes_
+
+    predicted_category_index = list(classes).index(
+        result.predicted_category
+    )
+
+    expected_confidence = float(
+        probabilities[0][predicted_category_index]
+    )
+
+    assert result.confidence == pytest.approx(
+        expected_confidence,
+        abs=1e-6,
+    )
