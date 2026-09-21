@@ -13,3 +13,16 @@ htmlcov/
 .idea/
 
 .DS_Store
+
+# Generated ML artifacts and evaluation reports
+artifacts/models/
+artifacts/reports/
+
+# Local raw expense data, database backups, and exports
+data/
+raw_data/
+exports/
+*.db
+*.sqlite
+*.sqlite3
+*.sql

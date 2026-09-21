@@ -1,6 +1,8 @@
 from unittest.mock import Mock
 
 import numpy as np
+import pytest
+
 
 from expense_analyzer.ml.evaluation.evaluator import (
     ModelEvaluator,
@@ -28,6 +30,12 @@ def test_evaluator_does_not_fit_test_data():
         [
             "Food",
             "Transport",
+        ]
+    )
+    classifier.predict_proba.return_value = np.array(
+        [
+            [0.90, 0.10],
+            [0.20, 0.80],
         ]
     )
 
@@ -74,5 +82,9 @@ def test_evaluator_does_not_fit_test_data():
     classifier.fit.assert_not_called()
 
     classifier.predict.assert_called_once()
+    classifier.predict_proba.assert_called_once()
 
     assert result.accuracy == 1.0
+    assert len(result.evaluated_predictions) == 2
+    assert result.confidence_summary.correct_mean == pytest.approx(0.85)
+    assert result.top_confusions == ()

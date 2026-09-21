@@ -1,3 +1,5 @@
+import pytest
+
 from expense_analyzer.ml.evaluation.metrics import (
     calculate_accuracy,
     calculate_confusion_matrix,
@@ -167,3 +169,45 @@ def test_confusion_matrix():
         (2, 0),
         (1, 1),
     )
+
+
+def test_metrics_have_expected_deterministic_values():
+    y_true = ["Food", "Food", "Transport", "Transport"]
+    y_pred = ["Food", "Food", "Transport", "Food"]
+
+    assert calculate_macro_precision(y_true, y_pred) == pytest.approx(
+        5 / 6
+    )
+    assert calculate_macro_recall(y_true, y_pred) == pytest.approx(0.75)
+    assert calculate_macro_f1(y_true, y_pred) == pytest.approx(
+        11 / 15
+    )
+    assert calculate_weighted_precision(y_true, y_pred) == pytest.approx(
+        5 / 6
+    )
+    assert calculate_weighted_recall(y_true, y_pred) == pytest.approx(0.75)
+    assert calculate_weighted_f1(y_true, y_pred) == pytest.approx(
+        11 / 15
+    )
+
+
+def test_perfect_and_incorrect_predictions():
+    y_true = ["Food", "Transport"]
+
+    assert calculate_accuracy(y_true, y_true) == 1.0
+    assert calculate_accuracy(y_true, ["Transport", "Food"]) == 0.0
+
+
+def test_invalid_evaluation_inputs_raise_clear_errors():
+    with pytest.raises(ValueError, match="cannot be empty"):
+        calculate_accuracy([], [])
+
+    with pytest.raises(ValueError, match="same length"):
+        calculate_accuracy(["Food"], ["Food", "Transport"])
+
+    with pytest.raises(ValueError, match="unsupported categories"):
+        calculate_confusion_matrix(
+            ["Food"],
+            ["Other"],
+            ["Food"],
+        )
