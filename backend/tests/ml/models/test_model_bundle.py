@@ -3,6 +3,7 @@ import json
 
 import pandas as pd
 import pytest
+from pathlib import Path
 
 from expense_analyzer.ml.evaluation.comparison import ModelComparison
 from expense_analyzer.ml.evaluation.result import (
@@ -180,7 +181,7 @@ def test_persistence_service_registers_validated_model(tmp_path):
     entry = service.registry.get_entry("expense_category", "v1.0.0")
 
     assert entry.status == "validated"
-    assert entry.artifact_location.endswith("expense_category\\v1.0.0")
+    assert Path(entry.artifact_location) == tmp_path / "expense_category" / "v1.0.0"
     assert entry.metrics["macro_f1"] == 0.8
 
     with pytest.raises(ValueError, match="inference testing"):
