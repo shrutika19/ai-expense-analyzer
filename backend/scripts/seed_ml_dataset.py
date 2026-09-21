@@ -20,23 +20,29 @@ EXPENSES = [
     ("Metro travel", 100.00, "Transport"),
     ("Bus ticket", 50.00, "Transport"),
 
+    # Travel
+    ("Flight ticket", 6500.00, "Travel"),
+    ("Hotel booking", 4500.00, "Travel"),
+    ("Train ticket", 1800.00, "Travel"),
+    ("Vacation booking", 10000.00, "Travel"),
+
     # Shopping
     ("Amazon household purchase", 1500.00, "Shopping"),
     ("Clothes purchase", 2200.00, "Shopping"),
     ("Online shopping", 1800.00, "Shopping"),
     ("New shoes", 3000.00, "Shopping"),
 
-    # Bills
-    ("Electricity bill", 1800.00, "Bills"),
-    ("Water bill", 500.00, "Bills"),
-    ("Internet bill", 999.00, "Bills"),
-    ("Mobile phone bill", 699.00, "Bills"),
-
     # Entertainment
     ("Netflix subscription", 649.00, "Entertainment"),
     ("Movie tickets", 800.00, "Entertainment"),
     ("Concert tickets", 2500.00, "Entertainment"),
     ("Music subscription", 199.00, "Entertainment"),
+
+    # Utilities
+    ("Electricity bill", 1800.00, "Utilities"),
+    ("Gas bill", 900.00, "Utilities"),
+    ("Water utility payment", 500.00, "Utilities"),
+    ("Internet bill", 999.00, "Utilities"),
 
     # Healthcare
     ("Doctor consultation", 1000.00, "Healthcare"),
@@ -56,18 +62,6 @@ EXPENSES = [
     ("Monthly rental payment", 28000.00, "Rent"),
     ("House rent payment", 24000.00, "Rent"),
 
-    # Travel
-    ("Flight ticket", 6500.00, "Travel"),
-    ("Hotel booking", 4500.00, "Travel"),
-    ("Train ticket", 1800.00, "Travel"),
-    ("Vacation booking", 10000.00, "Travel"),
-
-    # Utilities
-    ("Gas bill", 900.00, "Utilities"),
-    ("Electricity utility payment", 1600.00, "Utilities"),
-    ("Water utility payment", 450.00, "Utilities"),
-    ("Home utility service", 700.00, "Utilities"),
-
     # Other
     ("Miscellaneous expense", 500.00, "Other"),
     ("General expense", 700.00, "Other"),
@@ -79,6 +73,8 @@ EXPENSES = [
 def seed_ml_dataset() -> None:
     with get_connection() as connection:
         with connection.cursor() as cursor:
+
+            # Create a deterministic CI test user.
             cursor.execute(
                 """
                 INSERT INTO users (
@@ -102,6 +98,7 @@ def seed_ml_dataset() -> None:
                 ),
             )
 
+            # Insert deterministic ML training records.
             for description, amount, category in EXPENSES:
                 cursor.execute(
                     """
