@@ -1,17 +1,13 @@
 from unittest.mock import Mock, patch
 
-from expense_analyzer.ml.inference.service import (
-    InferenceService,
-)
+from expense_analyzer.ml.inference.service import InferenceService
 from expense_analyzer.ml.models.category_prediction import (
     CategoryPredictionInput,
     CategoryPredictionOutput,
 )
 
 
-@patch(
-    "expense_analyzer.ml.inference.service.ModelBundleLoader"
-)
+@patch("expense_analyzer.ml.inference.service.ModelBundleLoader")
 def test_service_loads_requested_model_version(
     loader_class: Mock,
 ) -> None:
@@ -33,12 +29,8 @@ def test_service_loads_requested_model_version(
     assert service.model is bundle
 
 
-@patch(
-    "expense_analyzer.ml.inference.service.ModelBundleLoader"
-)
-@patch(
-    "expense_analyzer.ml.inference.service.CategoryPredictor"
-)
+@patch("expense_analyzer.ml.inference.service.ModelBundleLoader")
+@patch("expense_analyzer.ml.inference.service.MLPredictor")
 def test_service_delegates_prediction(
     predictor_class: Mock,
     loader_class: Mock,

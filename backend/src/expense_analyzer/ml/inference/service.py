@@ -1,8 +1,6 @@
 from pathlib import Path
 
-from expense_analyzer.ml.inference.predictor import (
-    CategoryPredictor,
-)
+from expense_analyzer.ml.inference.predictor import MLPredictor
 from expense_analyzer.ml.models.category_prediction import (
     CategoryPredictionInput,
     CategoryPredictionOutput,
@@ -15,10 +13,10 @@ class InferenceService:
     Production inference service.
 
     Responsibilities:
-    - load the requested versioned model
-    - delegate prediction to CategoryPredictor
+        - Load the requested versioned model.
+        - Delegate prediction to MLPredictor.
 
-    It knows nothing about model training.
+    This service knows nothing about model training.
     """
 
     MODEL_NAME = "expense_category"
@@ -28,16 +26,14 @@ class InferenceService:
         artifacts_directory: Path | str = "artifacts/models",
         model_version: str | None = None,
     ) -> None:
-        self.model_loader = ModelBundleLoader(
-            artifacts_directory
-        )
+        self.model_loader = ModelBundleLoader(artifacts_directory)
 
         self.model = self.model_loader.load(
             self.MODEL_NAME,
             model_version,
         )
 
-        self.predictor = CategoryPredictor()
+        self.predictor = MLPredictor()
 
     def predict(
         self,

@@ -7,40 +7,58 @@ from expense_analyzer.ml.models.category_prediction import (
 from expense_analyzer.ml.models.model_bundle import ModelBundle
 
 
-class CategoryPredictor:
+class MLPredictor:
     """
-    Performs prediction using an already-loaded ModelBundle.
+    Performs inference using a persisted ModelBundle.
 
-    The predictor does not load or persist models.
+    The predictor never trains or modifies the model.
+
+    Flow:
+
+        Prediction Input
+              ↓
+        Feature Transformation
+              ↓
+        model.predict()
+              ↓
+        model.predict_proba()
+              ↓
+        Category + Confidence
     """
 
     def predict(
         self,
-        bundle: ModelBundle,
-        prediction: CategoryPredictionInput,
+        model_bundle: ModelBundle,
+        prediction_input: CategoryPredictionInput,
     ) -> CategoryPredictionOutput:
         dataframe = pd.DataFrame(
             [
                 {
-                    "description": prediction.description,
-                    "amount": prediction.amount,
+                    "description": prediction_input.description,
+                    "amount": prediction_input.amount,
                 }
             ]
         )
 
-        features = bundle.feature_pipeline.transform(
+        features = model_bundle.feature_pipeline.transform(
             dataframe
         )
 
-        predicted_category = bundle.classifier.predict(
+        predicted_categories = model_bundle.classifier.predict(
             features
-        )[0]
+        )
 
-        probabilities = bundle.classifier.predict_proba(
+        probabilities = model_bundle.classifier.predict_proba(
             features
-        )[0]
+        )
 
-        confidence = float(probabilities.max())
+        highest_probability_index = probabilities[0].argmax()
+
+        predicted_category = predicted_categories[0]
+
+        confidence = float(
+            probabilities[0][highest_probability_index]
+        )
 
         return CategoryPredictionOutput(
             predicted_category=str(predicted_category),
