@@ -1,10 +1,13 @@
+import pandas as pd
 import pytest
 
 from expense_analyzer.core.config import get_settings
+from expense_analyzer.ml.inference.predictor import MLPredictor
 from expense_analyzer.ml.inference.service import InferenceService
 from expense_analyzer.ml.models.category_prediction import (
     CategoryPredictionInput,
 )
+from expense_analyzer.ml.models.loader import ModelBundleLoader
 
 
 @pytest.fixture(scope="module")
@@ -14,7 +17,7 @@ def inference_service() -> InferenceService:
 
     No mocks are used here.
 
-    The service loads the real persisted model once and
+    The service loads the deterministic test model once and
     reuses it across the integration tests.
     """
     settings = get_settings()
@@ -28,6 +31,27 @@ def inference_service() -> InferenceService:
         pytest.fail(
             "Could not load the real persisted model for "
             f"integration testing: {error}"
+        )
+
+
+@pytest.fixture(scope="module")
+def model_bundle():
+    """
+    Load the deterministic test model bundle once.
+    """
+    settings = get_settings()
+
+    try:
+        return ModelBundleLoader(
+            settings.model_artifacts_directory
+        ).load(
+            "expense_category",
+            settings.model_version,
+        )
+    except Exception as error:
+        pytest.fail(
+            "Could not load the test model bundle: "
+            f"{error}"
         )
 
 
@@ -48,7 +72,7 @@ def test_real_model_produces_valid_prediction(
     """
     Verify the complete real inference flow:
 
-        Real persisted model
+        Real test model
                 ↓
         Real ModelBundleLoader
                 ↓
@@ -67,10 +91,7 @@ def test_real_model_produces_valid_prediction(
         prediction_input
     )
 
-    # Verify a category was returned.
     assert result.predicted_category
-
-    # Verify confidence is a valid probability.
     assert 0.0 <= result.confidence <= 1.0
 
 
@@ -78,7 +99,7 @@ def test_real_model_can_process_multiple_predictions(
     inference_service: InferenceService,
 ) -> None:
     """
-    Verify that the same loaded real model can handle
+    Verify that the same loaded real model can process
     multiple predictions without being reloaded.
     """
     inputs = [
@@ -112,21 +133,9 @@ def test_real_model_can_process_multiple_predictions(
         assert 0.0 <= result.confidence <= 1.0
 
 
-
-def test_prediction_confidence_matches_predicted_category_probability():
-    from expense_analyzer.ml.inference.predictor import MLPredictor
-    from expense_analyzer.ml.models.category_prediction import (
-        CategoryPredictionInput,
-    )
-    from expense_analyzer.ml.models.loader import ModelBundleLoader
-
-    model_bundle = ModelBundleLoader(
-        "artifacts/models"
-    ).load(
-        "expense_category",
-        "v1.0.0",
-    )
-
+def test_prediction_confidence_matches_predicted_category_probability(
+    model_bundle,
+) -> None:
     prediction_input = CategoryPredictionInput(
         description="Uber ride to office",
         amount=250.0,
@@ -138,9 +147,6 @@ def test_prediction_confidence_matches_predicted_category_probability():
         model_bundle,
         prediction_input,
     )
-
-    # Reproduce the model probability output.
-    import pandas as pd
 
     dataframe = pd.DataFrame(
         [
@@ -175,21 +181,9 @@ def test_prediction_confidence_matches_predicted_category_probability():
     )
 
 
-
-def test_inference_is_deterministic_for_same_input():
-    from expense_analyzer.ml.inference.predictor import MLPredictor
-    from expense_analyzer.ml.models.category_prediction import (
-        CategoryPredictionInput,
-    )
-    from expense_analyzer.ml.models.loader import ModelBundleLoader
-
-    model_bundle = ModelBundleLoader(
-        "artifacts/models"
-    ).load(
-        "expense_category",
-        "v1.0.0",
-    )
-
+def test_inference_is_deterministic_for_same_input(
+    model_bundle,
+) -> None:
     predictor = MLPredictor()
 
     prediction_input = CategoryPredictionInput(
@@ -212,8 +206,22 @@ def test_inference_is_deterministic_for_same_input():
         prediction_input,
     )
 
-    assert first_result.predicted_category == second_result.predicted_category
-    assert second_result.predicted_category == third_result.predicted_category
+    assert (
+        first_result.predicted_category
+        == second_result.predicted_category
+    )
 
-    assert first_result.confidence == second_result.confidence
-    assert second_result.confidence == third_result.confidence
+    assert (
+        second_result.predicted_category
+        == third_result.predicted_category
+    )
+
+    assert (
+        first_result.confidence
+        == second_result.confidence
+    )
+
+    assert (
+        second_result.confidence
+        == third_result.confidence
+    )

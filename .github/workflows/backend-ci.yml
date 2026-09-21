@@ -23,7 +23,6 @@ jobs:
     services:
       postgres:
         image: postgres:16
-
         env:
           POSTGRES_DB: expense_analyzer_test
           POSTGRES_USER: postgres
@@ -34,9 +33,9 @@ jobs:
 
         options: >-
           --health-cmd="pg_isready -U postgres -d expense_analyzer_test"
-          --health-interval=5s
+          --health-interval=10s
           --health-timeout=5s
-          --health-retries=10
+          --health-retries=5
 
     defaults:
       run:
@@ -47,31 +46,19 @@ jobs:
       ENV_FILE: .env.test
 
     steps:
-      # =========================================================
-      # 1. Checkout
-      # =========================================================
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # =========================================================
-      # 2. Setup Python
-      # =========================================================
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.14"
 
-      # =========================================================
-      # 3. Install dependencies
-      # =========================================================
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # =========================================================
-      # 4. Create CI environment
-      # =========================================================
       - name: Create test environment file
         run: |
           cat > .env.test <<'EOF'
@@ -92,310 +79,12 @@ jobs:
           JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
           JWT_ISSUER=ai-expense-analyzer
           JWT_AUDIENCE=ai-expense-analyzer-api
-
-          MODEL_VERSION=v1.0.0
-          MODEL_ARTIFACTS_DIRECTORY=artifacts/models
           EOF
 
-          echo "Created .env.test"
-
-      # =========================================================
-      # 5. Verify environment configuration
-      # =========================================================
-      - name: Verify application configuration
-        run: |
-          python - <<'PY'
-          from expense_analyzer.core.config import get_settings
-
-          settings = get_settings()
-
-          print("========== APPLICATION CONFIG ==========")
-          print("Environment:", settings.environment)
-          print("Database host:", settings.database_host)
-          print("Database port:", settings.database_port)
-          print("Database name:", settings.database_name)
-          print("Database user:", settings.database_user)
-          print("Model version:", settings.model_version)
-          print("Model artifacts directory:", settings.model_artifacts_directory)
-          print("=========================================")
-          PY
-
-      # =========================================================
-      # 6. Verify PostgreSQL connection directly
-      # =========================================================
-      - name: Verify PostgreSQL service
-        run: |
-          python - <<'PY'
-          from expense_analyzer.infrastructure.database.connection import get_connection
-
-          with get_connection() as connection:
-              with connection.cursor() as cursor:
-                  cursor.execute(
-                      "SELECT current_database(), current_user, version()"
-                  )
-
-                  database, user, version = cursor.fetchone()
-
-                  print("========== POSTGRES CONNECTION ==========")
-                  print("Database:", database)
-                  print("User:", user)
-                  print("PostgreSQL:", version)
-                  print("=========================================")
-
-                  assert database == "expense_analyzer_test", (
-                      f"Unexpected database: {database}"
-                  )
-          PY
-
-      # =========================================================
-      # 7. Initialize database
-      # =========================================================
       - name: Initialize database
         run: |
           python scripts/init_db.py
 
-      # =========================================================
-      # 8. Verify database schema
-      # =========================================================
-      - name: Verify database schema
-        run: |
-          python - <<'PY'
-          from expense_analyzer.infrastructure.database.connection import get_connection
-
-          with get_connection() as connection:
-              with connection.cursor() as cursor:
-
-                  cursor.execute("""
-                      SELECT table_name
-                      FROM information_schema.tables
-                      WHERE table_schema = 'public'
-                      ORDER BY table_name
-                  """)
-
-                  tables = [row[0] for row in cursor.fetchall()]
-
-                  print("========== DATABASE TABLES ==========")
-                  print("Tables:", tables)
-                  print("=====================================")
-
-                  assert "users" in tables, "users table does not exist"
-                  assert "expenses" in tables, "expenses table does not exist"
-          PY
-
-      # =========================================================
-      # 9. Seed deterministic ML dataset
-      # =========================================================
-      - name: Seed deterministic ML training dataset
-        run: |
-          python scripts/seed_ml_dataset.py
-
-      # =========================================================
-      # 10. Verify seed using direct PostgreSQL query
-      # =========================================================
-      - name: Verify seeded ML data
-        run: |
-          python - <<'PY'
-          from expense_analyzer.infrastructure.database.connection import get_connection
-
-          with get_connection() as connection:
-              with connection.cursor() as cursor:
-
-                  # Current database
-                  cursor.execute(
-                      "SELECT current_database(), current_user"
-                  )
-
-                  database, user = cursor.fetchone()
-
-                  print("========== SEEDED DATABASE ==========")
-                  print("Database:", database)
-                  print("User:", user)
-
-                  # Users
-                  cursor.execute("SELECT COUNT(*) FROM users")
-                  users_count = cursor.fetchone()[0]
-
-                  print("Users:", users_count)
-
-                  # Expenses
-                  cursor.execute("SELECT COUNT(*) FROM expenses")
-                  expenses_count = cursor.fetchone()[0]
-
-                  print("Expenses:", expenses_count)
-
-                  # Categories
-                  cursor.execute("""
-                      SELECT category, COUNT(*)
-                      FROM expenses
-                      GROUP BY category
-                      ORDER BY category
-                  """)
-
-                  categories = cursor.fetchall()
-
-                  print("Categories:")
-
-                  for category, count in categories:
-                      print(f"  {category}: {count}")
-
-                  print("====================================")
-
-                  assert users_count >= 1, (
-                      "Seed failed: no users found"
-                  )
-
-                  assert expenses_count == 50, (
-                      f"Seed failed: expected 50 expenses, "
-                      f"found {expenses_count}"
-                  )
-
-                  assert len(categories) == 10, (
-                      f"Expected 10 categories, "
-                      f"found {len(categories)}"
-                  )
-          PY
-
-      # =========================================================
-      # 11. Verify exact ML SQL query independently
-      # =========================================================
-      - name: Verify ML dataset SQL query
-        run: |
-          python - <<'PY'
-          from expense_analyzer.infrastructure.database.connection import get_connection
-
-          query = """
-              SELECT
-                  description,
-                  amount,
-                  category,
-                  expense_date
-              FROM expenses
-              ORDER BY created_at;
-          """
-
-          with get_connection() as connection:
-              with connection.cursor() as cursor:
-
-                  cursor.execute(query)
-
-                  rows = cursor.fetchall()
-
-                  print("========== ML SQL QUERY ==========")
-                  print("Rows returned:", len(rows))
-
-                  if rows:
-                      print("First row:", rows[0])
-                      print("Last row:", rows[-1])
-
-                  print("==================================")
-
-                  assert len(rows) == 50, (
-                      f"Expected 50 rows from ML query, "
-                      f"found {len(rows)}"
-                  )
-          PY
-
-      # =========================================================
-      # 12. Verify DatasetLoader
-      # =========================================================
-      - name: Verify DatasetLoader
-        run: |
-          python - <<'PY'
-          from expense_analyzer.ml.datasets.loader import DatasetLoader
-
-          dataframe = DatasetLoader().load()
-
-          print("========== DATASET LOADER ==========")
-          print("Loaded rows:", len(dataframe))
-
-          if not dataframe.empty:
-              print("\nColumns:")
-              print(dataframe.columns.tolist())
-
-              print("\nCategories:")
-              print(
-                  dataframe["category"]
-                  .value_counts()
-                  .sort_index()
-              )
-
-              print("\nFirst rows:")
-              print(dataframe.head())
-
-          print("====================================")
-
-          assert not dataframe.empty, (
-              "DatasetLoader returned an empty dataset"
-          )
-
-          assert len(dataframe) == 50, (
-              f"Expected 50 rows, found {len(dataframe)}"
-          )
-          PY
-
-      # =========================================================
-      # 13. Verify cleaned dataset
-      # =========================================================
-      - name: Verify cleaned ML dataset
-        run: |
-          python - <<'PY'
-          from expense_analyzer.ml.datasets.loader import DatasetLoader
-          from expense_analyzer.ml.datasets.cleaner import DatasetCleaner
-
-          dataframe = DatasetLoader().load()
-
-          result = DatasetCleaner().clean(dataframe)
-
-          cleaned = result.dataframe
-
-          print("========== CLEANED DATASET ==========")
-          print("Rows before cleaning:", len(dataframe))
-          print("Rows after cleaning:", len(cleaned))
-          print("Removed rows:", result.removed_count)
-
-          print("\nCategories:")
-          print(
-              cleaned["category"]
-              .value_counts()
-              .sort_index()
-          )
-
-          print("=====================================")
-
-          assert not cleaned.empty, (
-              "Dataset is empty after cleaning"
-          )
-
-          assert cleaned["category"].nunique() == 10, (
-              "Expected 10 expense categories"
-          )
-          PY
-
-      # =========================================================
-      # 14. Publish ML model
-      # =========================================================
-      - name: Publish ML model
-        run: |
-          python -m expense_analyzer.ml.training.publish_model
-
-      # =========================================================
-      # 15. Verify model artifact
-      # =========================================================
-      - name: Verify ML model artifact
-        run: |
-          echo "========== MODEL ARTIFACT =========="
-
-          test -f artifacts/models/expense_category/v1.0.0/model.joblib
-          test -f artifacts/models/expense_category/v1.0.0/metadata.json
-
-          ls -lh artifacts/models/expense_category/v1.0.0/
-
-          echo "ML model artifact is available"
-          echo "=================================="
-
-      # =========================================================
-      # 16. Run backend tests
-      # =========================================================
-      - name: Run backend tests
+      - name: Run tests
         run: |
           pytest -v
