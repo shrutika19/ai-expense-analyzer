@@ -108,14 +108,28 @@ jobs:
           python scripts/seed_ml_dataset.py
 
       # ---------------------------------------------------------
-      # 7. Publish ML model
+      # 7. Verify raw ML training dataset
+      # ---------------------------------------------------------
+      - name: Verify ML training dataset
+        run: |
+          python -c "from expense_analyzer.ml.datasets.loader import DatasetLoader; df=DatasetLoader().load(); print(f'Loaded rows: {len(df)}'); print(df['category'].value_counts().sort_index()); assert not df.empty, 'ML dataset is empty'"
+
+      # ---------------------------------------------------------
+      # 8. Verify dataset after cleaning
+      # ---------------------------------------------------------
+      - name: Verify cleaned ML dataset
+        run: |
+          python -c "from expense_analyzer.ml.datasets.loader import DatasetLoader; from expense_analyzer.ml.datasets.cleaner import DatasetCleaner; df=DatasetLoader().load(); result=DatasetCleaner().clean(df); print(f'Rows before cleaning: {len(df)}'); print(f'Rows after cleaning: {len(result.dataframe)}'); print('Categories after cleaning:'); print(result.dataframe['category'].value_counts().sort_index()); assert not result.dataframe.empty, 'ML dataset is empty after cleaning'"
+
+      # ---------------------------------------------------------
+      # 9. Publish ML model
       # ---------------------------------------------------------
       - name: Publish ML model
         run: |
           python -m expense_analyzer.ml.training.publish_model
 
       # ---------------------------------------------------------
-      # 8. Verify generated ML artifacts
+      # 10. Verify generated ML model artifact
       # ---------------------------------------------------------
       - name: Verify ML model artifact
         run: |
@@ -124,7 +138,7 @@ jobs:
           echo "ML model artifact is available"
 
       # ---------------------------------------------------------
-      # 9. Run backend tests
+      # 11. Run backend tests
       # ---------------------------------------------------------
       - name: Run tests
         run: |
