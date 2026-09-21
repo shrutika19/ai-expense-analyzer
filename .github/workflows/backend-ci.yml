@@ -23,6 +23,7 @@ jobs:
     services:
       postgres:
         image: postgres:16
+
         env:
           POSTGRES_DB: expense_analyzer_test
           POSTGRES_USER: postgres
@@ -53,7 +54,7 @@ jobs:
         uses: actions/checkout@v4
 
       # ---------------------------------------------------------
-      # 2. Set up Python
+      # 2. Setup Python
       # ---------------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -69,7 +70,7 @@ jobs:
           pip install -r requirements.txt
 
       # ---------------------------------------------------------
-      # 4. Create test environment file
+      # 4. Create test environment
       # ---------------------------------------------------------
       - name: Create test environment file
         run: |
@@ -91,55 +92,83 @@ jobs:
           JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
           JWT_ISSUER=ai-expense-analyzer
           JWT_AUDIENCE=ai-expense-analyzer-api
+
+          MODEL_VERSION=v1.0.0
+          MODEL_ARTIFACTS_DIRECTORY=artifacts/models
           EOF
 
       # ---------------------------------------------------------
-      # 5. Initialize database schema
+      # 5. Verify application database configuration
+      # ---------------------------------------------------------
+      - name: Verify application database configuration
+        run: |
+          python -c "from expense_analyzer.core.config import get_settings; s=get_settings(); print('Environment:', s.environment); print('Database host:', s.database_host); print('Database port:', s.database_port); print('Database name:', s.database_name); print('Database user:', s.database_user); print('Model version:', s.model_version); print('Model artifacts directory:', s.model_artifacts_directory)"
+
+      # ---------------------------------------------------------
+      # 6. Initialize database schema
       # ---------------------------------------------------------
       - name: Initialize database
         run: |
           python scripts/init_db.py
 
       # ---------------------------------------------------------
-      # 6. Seed deterministic ML training dataset
+      # 7. Verify database schema
       # ---------------------------------------------------------
-      - name: Seed ML training dataset
+      - name: Verify database schema
+        run: |
+          python -c "from expense_analyzer.infrastructure.database.connection import get_connection; conn=get_connection(); cur=conn.cursor(); cur.execute('SELECT current_database(), current_user'); print('Database:', cur.fetchone()); cur.execute(\"SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY table_name\"); print('Tables:', cur.fetchall()); cur.close(); conn.close()"
+
+      # ---------------------------------------------------------
+      # 8. Seed deterministic ML dataset
+      # ---------------------------------------------------------
+      - name: Seed deterministic ML training dataset
         run: |
           python scripts/seed_ml_dataset.py
 
       # ---------------------------------------------------------
-      # 7. Verify raw ML training dataset
+      # 9. Verify seeded database
       # ---------------------------------------------------------
-      - name: Verify ML training dataset
+      - name: Verify seeded database
+        run: |
+          python -c "from expense_analyzer.infrastructure.database.connection import get_connection; conn=get_connection(); cur=conn.cursor(); cur.execute('SELECT current_database(), current_user'); print('Database:', cur.fetchone()); cur.execute('SELECT COUNT(*) FROM users'); print('Users:', cur.fetchone()[0]); cur.execute('SELECT COUNT(*) FROM expenses'); print('Expenses:', cur.fetchone()[0]); cur.execute('SELECT category, COUNT(*) FROM expenses GROUP BY category ORDER BY category'); print('Categories:', cur.fetchall()); cur.close(); conn.close()"
+
+      # ---------------------------------------------------------
+      # 10. Verify raw ML training dataset
+      # ---------------------------------------------------------
+      - name: Verify raw ML training dataset
         run: |
           python -c "from expense_analyzer.ml.datasets.loader import DatasetLoader; df=DatasetLoader().load(); print(f'Loaded rows: {len(df)}'); print(df['category'].value_counts().sort_index()); assert not df.empty, 'ML dataset is empty'"
 
       # ---------------------------------------------------------
-      # 8. Verify dataset after cleaning
+      # 11. Verify cleaned ML dataset
       # ---------------------------------------------------------
       - name: Verify cleaned ML dataset
         run: |
-          python -c "from expense_analyzer.ml.datasets.loader import DatasetLoader; from expense_analyzer.ml.datasets.cleaner import DatasetCleaner; df=DatasetLoader().load(); result=DatasetCleaner().clean(df); print(f'Rows before cleaning: {len(df)}'); print(f'Rows after cleaning: {len(result.dataframe)}'); print('Categories after cleaning:'); print(result.dataframe['category'].value_counts().sort_index()); assert not result.dataframe.empty, 'ML dataset is empty after cleaning'"
+          python -c "from expense_analyzer.ml.datasets.loader import DatasetLoader; from expense_analyzer.ml.datasets.cleaner import DatasetCleaner; df=DatasetLoader().load(); result=DatasetCleaner().clean(df); print(f'Rows before cleaning: {len(df)}'); print(f'Rows after cleaning: {len(result.dataframe)}'); print('Categories after cleaning:'); print(result.dataframe['category'].value_counts().sort_index()); assert not result.dataframe.empty, 'ML dataset is empty after cleaning'; assert result.dataframe['category'].nunique() >= 2, 'ML dataset must contain at least two categories'"
 
       # ---------------------------------------------------------
-      # 9. Publish ML model
+      # 12. Publish ML model
       # ---------------------------------------------------------
       - name: Publish ML model
         run: |
           python -m expense_analyzer.ml.training.publish_model
 
       # ---------------------------------------------------------
-      # 10. Verify generated ML model artifact
+      # 13. Verify ML model artifact
       # ---------------------------------------------------------
       - name: Verify ML model artifact
         run: |
           test -f artifacts/models/expense_category/v1.0.0/model.joblib
           test -f artifacts/models/expense_category/v1.0.0/metadata.json
+
           echo "ML model artifact is available"
 
+          echo "Artifact directory:"
+          find artifacts/models/expense_category/v1.0.0 -maxdepth 1 -type f -print
+
       # ---------------------------------------------------------
-      # 11. Run backend tests
+      # 14. Run backend tests
       # ---------------------------------------------------------
-      - name: Run tests
+      - name: Run backend tests
         run: |
           pytest -v
