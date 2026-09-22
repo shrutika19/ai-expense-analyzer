@@ -18,6 +18,10 @@ from expense_analyzer.exceptions.auth import (
     InactiveUserException,
     InvalidTokenException,
 )
+from expense_analyzer.ml.exceptions import (
+    ModelUnavailableError,
+    PredictorUnavailableError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -131,5 +135,50 @@ async def invalid_token_handler(
         content={
             "error": "INVALID_TOKEN",
             "message": str(exc),
+        },
+    )
+
+
+
+async def model_unavailable_handler(
+    request: Request,
+    exc: ModelUnavailableError,
+) -> JSONResponse:
+    logger.exception(
+        "ML model unavailable: %s %s",
+        request.method,
+        request.url.path,
+        exc_info=exc,
+    )
+
+    return JSONResponse(
+        status_code=503,
+        content={
+            "error": {
+                "code": "MODEL_UNAVAILABLE",
+                "message": "ML model is currently unavailable.",
+            }
+        },
+    )
+
+
+async def predictor_unavailable_handler(
+    request: Request,
+    exc: PredictorUnavailableError,
+) -> JSONResponse:
+    logger.exception(
+        "ML predictor unavailable: %s %s",
+        request.method,
+        request.url.path,
+        exc_info=exc,
+    )
+
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": {
+                "code": "PREDICTOR_UNAVAILABLE",
+                "message": "Prediction could not be completed.",
+            }
         },
     )
