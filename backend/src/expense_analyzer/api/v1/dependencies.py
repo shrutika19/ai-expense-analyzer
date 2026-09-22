@@ -48,7 +48,9 @@ from expense_analyzer.services.expense_import_service import (
     ExpenseImportService,
 )
 from expense_analyzer.services.expense_service import ExpenseService
-
+from expense_analyzer.core.config import get_settings
+from expense_analyzer.ml.inference.service import InferenceService
+from functools import lru_cache
 
 bearer_scheme = HTTPBearer()
 
@@ -160,4 +162,14 @@ def get_auth_service(
     return AuthService(
         user_repository=user_repository,
         jwt_service=jwt_service,
+    )
+
+
+@lru_cache
+def get_inference_service() -> InferenceService:
+    settings = get_settings()
+
+    return InferenceService(
+        artifacts_directory=settings.model_artifacts_directory,
+        model_version=settings.model_version,
     )

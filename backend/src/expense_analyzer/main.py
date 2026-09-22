@@ -14,6 +14,9 @@ from expense_analyzer.api.exception_handlers import (
     user_already_exists_handler,
     user_not_found_handler,
     generic_exception_handler,
+    model_unavailable_handler,
+    predictor_unavailable_handler,
+
 )
 from expense_analyzer.api.routes.health import router as health_router
 from expense_analyzer.api.v1.router import router as v1_router
@@ -33,6 +36,10 @@ from expense_analyzer.exceptions.expense_import import (
 )
 from expense_analyzer.api.security_headers import (
     SecurityHeadersMiddleware,
+)
+from expense_analyzer.ml.exceptions import (
+    ModelUnavailableError,
+    PredictorUnavailableError,
 )
 
 
@@ -131,4 +138,14 @@ app.add_exception_handler(
 app.add_exception_handler(
     InvalidTokenException,
     invalid_token_handler,
+)
+
+app.add_exception_handler(
+    ModelUnavailableError,
+    model_unavailable_handler,
+)
+
+app.add_exception_handler(
+    PredictorUnavailableError,
+    predictor_unavailable_handler,
 )
