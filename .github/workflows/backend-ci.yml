@@ -79,6 +79,9 @@ jobs:
           JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
           JWT_ISSUER=ai-expense-analyzer
           JWT_AUDIENCE=ai-expense-analyzer-api
+
+          MODEL_ARTIFACTS_DIRECTORY=tests/fixtures/models
+          MODEL_VERSION=v1.0.0
           EOF
 
       - name: Initialize database
