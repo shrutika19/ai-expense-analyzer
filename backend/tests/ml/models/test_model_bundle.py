@@ -4,6 +4,7 @@ import json
 import pandas as pd
 import pytest
 from pathlib import Path
+from expense_analyzer.ml.exceptions import ModelCompatibilityError
 
 from expense_analyzer.ml.evaluation.comparison import ModelComparison
 from expense_analyzer.ml.evaluation.result import (
@@ -140,18 +141,34 @@ def test_model_bundle_round_trip_and_latest_version(tmp_path):
     assert latest.metadata.model_version == "v1.1.0"
 
 
-def test_model_bundle_rejects_duplicate_versions_and_corruption(tmp_path):
+def test_model_bundle_rejects_duplicate_versions_and_corruption(
+    tmp_path,
+):
     storage = ModelBundleStorage(tmp_path)
     storage.save(create_bundle("v1.0.0"))
 
     with pytest.raises(FileExistsError):
         storage.save(create_bundle("v1.0.0"))
 
-    model_path = tmp_path / "expense_category" / "v1.0.0" / "model.joblib"
+    model_path = (
+        tmp_path
+        / "expense_category"
+        / "v1.0.0"
+        / "model.joblib"
+    )
+
     model_path.write_bytes(b"corrupted")
 
-    with pytest.raises(ValueError, match="checksum"):
-        ModelBundleLoader(tmp_path).load("expense_category", "v1.0.0")
+    with pytest.raises(
+        ModelCompatibilityError,
+        match="checksum",
+    ):
+        ModelBundleLoader(
+            tmp_path
+        ).load(
+            "expense_category",
+            "v1.0.0",
+        )
 
 
 def test_persistence_service_saves_checks_and_loads_bundle(tmp_path):
@@ -222,21 +239,42 @@ def test_persistence_service_rejects_invalid_metadata(
         ModelPersistenceService(tmp_path).save_bundle(invalid_bundle)
 
 
-def test_loader_rejects_invalid_metadata_from_artifact(tmp_path):
+def test_loader_rejects_invalid_metadata_from_artifact(
+    tmp_path,
+):
     storage = ModelBundleStorage(tmp_path)
     storage.save(create_bundle("v1.0.0"))
+
     metadata_path = (
         tmp_path
         / "expense_category"
         / "v1.0.0"
         / "metadata.json"
     )
-    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-    metadata["feature_configuration"] = {}
-    metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
 
-    with pytest.raises(ValueError, match="feature configuration"):
-        ModelBundleLoader(tmp_path).load("expense_category", "v1.0.0")
+    metadata = json.loads(
+        metadata_path.read_text(
+            encoding="utf-8"
+        )
+    )
+
+    metadata["feature_configuration"] = {}
+
+    metadata_path.write_text(
+        json.dumps(metadata),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ModelCompatibilityError,
+        match="incompatible",
+    ):
+        ModelBundleLoader(
+            tmp_path
+        ).load(
+            "expense_category",
+            "v1.0.0",
+        )
 
 
 @pytest.mark.parametrize("version", ["1.0.0", "v1.0", "v1.0.0-beta"])

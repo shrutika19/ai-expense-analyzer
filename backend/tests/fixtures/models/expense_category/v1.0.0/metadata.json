@@ -1,0 +1,699 @@
+{
+  "model_name": "expense_category",
+  "model_version": "v1.0.0",
+  "algorithm": "LogisticRegression",
+  "feature_configuration": {
+    "tfidf": {
+      "lowercase": true,
+      "ngram_range": [
+        1,
+        2
+      ],
+      "min_df": 2,
+      "max_features": 5000
+    },
+    "amount_included": false
+  },
+  "training_dataset_identifier": "5e55e9b967abda563e78edba4a6a5e79af6a2ea4ceea2fa5c7d4e016c283c666",
+  "training_row_count": 208,
+  "number_of_categories": 10,
+  "category_labels": [
+    "Education",
+    "Entertainment",
+    "Food",
+    "Healthcare",
+    "Other",
+    "Rent",
+    "Shopping",
+    "Transport",
+    "Travel",
+    "Utilities"
+  ],
+  "training_timestamp": "2026-09-21T18:24:49.174828+00:00",
+  "random_seed": 42,
+  "model_parameters": {
+    "max_iterations": 1000,
+    "random_state": 42
+  },
+  "evaluation_metrics": {
+    "model_name": "Model A",
+    "accuracy": 0.8301886792452831,
+    "macro_precision": 0.86,
+    "macro_recall": 0.8300000000000001,
+    "macro_f1": 0.8257287157287159,
+    "weighted_precision": 0.8547169811320754,
+    "weighted_recall": 0.8301886792452831,
+    "weighted_f1": 0.8235290914536197,
+    "per_category_metrics": [
+      {
+        "category": "Education",
+        "precision": 0.6666666666666666,
+        "recall": 0.8,
+        "f1": 0.7272727272727273
+      },
+      {
+        "category": "Entertainment",
+        "precision": 1.0,
+        "recall": 0.4,
+        "f1": 0.5714285714285714
+      },
+      {
+        "category": "Food",
+        "precision": 0.6666666666666666,
+        "recall": 1.0,
+        "f1": 0.8
+      },
+      {
+        "category": "Healthcare",
+        "precision": 1.0,
+        "recall": 0.8,
+        "f1": 0.8888888888888888
+      },
+      {
+        "category": "Other",
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      {
+        "category": "Rent",
+        "precision": 0.8333333333333334,
+        "recall": 1.0,
+        "f1": 0.9090909090909091
+      },
+      {
+        "category": "Shopping",
+        "precision": 0.8333333333333334,
+        "recall": 0.8333333333333334,
+        "f1": 0.8333333333333334
+      },
+      {
+        "category": "Transport",
+        "precision": 0.8,
+        "recall": 0.8,
+        "f1": 0.8
+      },
+      {
+        "category": "Travel",
+        "precision": 0.8,
+        "recall": 0.6666666666666666,
+        "f1": 0.7272727272727273
+      },
+      {
+        "category": "Utilities",
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    ],
+    "confusion_matrix": [
+      [
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        2,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        5,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        5,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        5,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        4,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        5
+      ]
+    ],
+    "labels": [
+      "Education",
+      "Entertainment",
+      "Food",
+      "Healthcare",
+      "Other",
+      "Rent",
+      "Shopping",
+      "Transport",
+      "Travel",
+      "Utilities"
+    ],
+    "evaluated_predictions": [
+      {
+        "description": "Lunch at restaurant",
+        "actual_category": "Food",
+        "predicted_category": "Food",
+        "confidence": 0.6150709018565913,
+        "correct": true
+      },
+      {
+        "description": "Flight ticket booking",
+        "actual_category": "Travel",
+        "predicted_category": "Travel",
+        "confidence": 0.6435990730711115,
+        "correct": true
+      },
+      {
+        "description": "Online entertainment subscription",
+        "actual_category": "Entertainment",
+        "predicted_category": "Education",
+        "confidence": 0.32388408022337417,
+        "correct": false
+      },
+      {
+        "description": "Online shopping for headphones",
+        "actual_category": "Shopping",
+        "predicted_category": "Shopping",
+        "confidence": 0.29254492146085587,
+        "correct": true
+      },
+      {
+        "description": "Stand-up comedy show",
+        "actual_category": "Entertainment",
+        "predicted_category": "Food",
+        "confidence": 0.12512629947630202,
+        "correct": false
+      },
+      {
+        "description": "House rental payment",
+        "actual_category": "Rent",
+        "predicted_category": "Rent",
+        "confidence": 0.4363938738634834,
+        "correct": true
+      },
+      {
+        "description": "Home decor items",
+        "actual_category": "Shopping",
+        "predicted_category": "Shopping",
+        "confidence": 0.17887734091078544,
+        "correct": true
+      },
+      {
+        "description": "Cinema tickets",
+        "actual_category": "Entertainment",
+        "predicted_category": "Entertainment",
+        "confidence": 0.45785085764135797,
+        "correct": true
+      },
+      {
+        "description": "Miscellaneous payment",
+        "actual_category": "Other",
+        "predicted_category": "Other",
+        "confidence": 0.46761274629531985,
+        "correct": true
+      },
+      {
+        "description": "Online course",
+        "actual_category": "Education",
+        "predicted_category": "Education",
+        "confidence": 0.5530874324345726,
+        "correct": true
+      },
+      {
+        "description": "Doctor follow-up visit",
+        "actual_category": "Healthcare",
+        "predicted_category": "Healthcare",
+        "confidence": 0.2529408615340023,
+        "correct": true
+      },
+      {
+        "description": "Unplanned personal expense",
+        "actual_category": "Other",
+        "predicted_category": "Other",
+        "confidence": 0.4563419486688894,
+        "correct": true
+      },
+      {
+        "description": "Bowling game",
+        "actual_category": "Entertainment",
+        "predicted_category": "Food",
+        "confidence": 0.12512629947630202,
+        "correct": false
+      },
+      {
+        "description": "Uber",
+        "actual_category": "Transport",
+        "predicted_category": "Travel",
+        "confidence": 0.3059687599297343,
+        "correct": false
+      },
+      {
+        "description": "Food",
+        "actual_category": "Food",
+        "predicted_category": "Food",
+        "confidence": 0.35701526986953264,
+        "correct": true
+      },
+      {
+        "description": "Uber ride to office",
+        "actual_category": "Transport",
+        "predicted_category": "Transport",
+        "confidence": 0.39583068311535097,
+        "correct": true
+      },
+      {
+        "description": "Pharmacy purchase",
+        "actual_category": "Healthcare",
+        "predicted_category": "Healthcare",
+        "confidence": 0.21051956540724015,
+        "correct": true
+      },
+      {
+        "description": "Weekend hotel booking",
+        "actual_category": "Travel",
+        "predicted_category": "Travel",
+        "confidence": 0.46231223664900634,
+        "correct": true
+      },
+      {
+        "description": "Intercity bus ticket",
+        "actual_category": "Travel",
+        "predicted_category": "Transport",
+        "confidence": 0.34693310759632856,
+        "correct": false
+      },
+      {
+        "description": "Cab to airport",
+        "actual_category": "Transport",
+        "predicted_category": "Transport",
+        "confidence": 0.27456112093529067,
+        "correct": true
+      },
+      {
+        "description": "Online clothing order",
+        "actual_category": "Shopping",
+        "predicted_category": "Education",
+        "confidence": 0.2758971638632833,
+        "correct": false
+      },
+      {
+        "description": "Restaurant dinner",
+        "actual_category": "Food",
+        "predicted_category": "Food",
+        "confidence": 0.5113186628564548,
+        "correct": true
+      },
+      {
+        "description": "Monthly flat rent",
+        "actual_category": "Rent",
+        "predicted_category": "Rent",
+        "confidence": 0.5924057683767651,
+        "correct": true
+      },
+      {
+        "description": "Developer training program",
+        "actual_category": "Education",
+        "predicted_category": "Education",
+        "confidence": 0.32154547822783835,
+        "correct": true
+      },
+      {
+        "description": "Medical laboratory tests",
+        "actual_category": "Healthcare",
+        "predicted_category": "Healthcare",
+        "confidence": 0.2688797243356445,
+        "correct": true
+      },
+      {
+        "description": "Monthly fuel expense",
+        "actual_category": "Transport",
+        "predicted_category": "Transport",
+        "confidence": 0.197479377505386,
+        "correct": true
+      },
+      {
+        "description": "Electricity bill",
+        "actual_category": "Utilities",
+        "predicted_category": "Utilities",
+        "confidence": 0.6325452017030079,
+        "correct": true
+      },
+      {
+        "description": "Eye examination",
+        "actual_category": "Healthcare",
+        "predicted_category": "Food",
+        "confidence": 0.12512629947630202,
+        "correct": false
+      },
+      {
+        "description": "Technical programming book",
+        "actual_category": "Education",
+        "predicted_category": "Education",
+        "confidence": 0.372304329985003,
+        "correct": true
+      },
+      {
+        "description": "Cloud certification course",
+        "actual_category": "Education",
+        "predicted_category": "Education",
+        "confidence": 0.48492274439467603,
+        "correct": true
+      },
+      {
+        "description": "Guest house stay",
+        "actual_category": "Travel",
+        "predicted_category": "Rent",
+        "confidence": 0.1741479268464036,
+        "correct": false
+      },
+      {
+        "description": "Mobile phone bill",
+        "actual_category": "Utilities",
+        "predicted_category": "Utilities",
+        "confidence": 0.518638599842281,
+        "correct": true
+      },
+      {
+        "description": "Music streaming subscription",
+        "actual_category": "Entertainment",
+        "predicted_category": "Entertainment",
+        "confidence": 0.5679950878218285,
+        "correct": true
+      },
+      {
+        "description": "General personal expense",
+        "actual_category": "Other",
+        "predicted_category": "Other",
+        "confidence": 0.5669976402208461,
+        "correct": true
+      },
+      {
+        "description": "Hotel booking",
+        "actual_category": "Travel",
+        "predicted_category": "Travel",
+        "confidence": 0.5171118991326616,
+        "correct": true
+      },
+      {
+        "description": "New office trousers",
+        "actual_category": "Shopping",
+        "predicted_category": "Shopping",
+        "confidence": 0.5095097764437726,
+        "correct": true
+      },
+      {
+        "description": "Online shopping for home items",
+        "actual_category": "Shopping",
+        "predicted_category": "Shopping",
+        "confidence": 0.3225690983474079,
+        "correct": true
+      },
+      {
+        "description": "Prescription medicine purchase",
+        "actual_category": "Healthcare",
+        "predicted_category": "Healthcare",
+        "confidence": 0.4014661949439158,
+        "correct": true
+      },
+      {
+        "description": "Petrol for car",
+        "actual_category": "Transport",
+        "predicted_category": "Transport",
+        "confidence": 0.19232150384954913,
+        "correct": true
+      },
+      {
+        "description": "Water utility payment",
+        "actual_category": "Utilities",
+        "predicted_category": "Utilities",
+        "confidence": 0.3041875347816891,
+        "correct": true
+      },
+      {
+        "description": "Gas and utility bill",
+        "actual_category": "Utilities",
+        "predicted_category": "Utilities",
+        "confidence": 0.5710890828555012,
+        "correct": true
+      },
+      {
+        "description": "Tea coffee and snacks",
+        "actual_category": "Food",
+        "predicted_category": "Food",
+        "confidence": 0.4049080355579198,
+        "correct": true
+      },
+      {
+        "description": "Flight ticket for business trip",
+        "actual_category": "Travel",
+        "predicted_category": "Travel",
+        "confidence": 0.4483861903042564,
+        "correct": true
+      },
+      {
+        "description": "Monthly apartment rent",
+        "actual_category": "Rent",
+        "predicted_category": "Rent",
+        "confidence": 0.6953582103562324,
+        "correct": true
+      },
+      {
+        "description": "Study material purchase",
+        "actual_category": "Education",
+        "predicted_category": "Shopping",
+        "confidence": 0.36497755584773356,
+        "correct": false
+      },
+      {
+        "description": "Monthly accommodation rent",
+        "actual_category": "Rent",
+        "predicted_category": "Rent",
+        "confidence": 0.5808937497988439,
+        "correct": true
+      },
+      {
+        "description": "Fresh fruits and vegetables",
+        "actual_category": "Food",
+        "predicted_category": "Food",
+        "confidence": 0.21023552798666886,
+        "correct": true
+      },
+      {
+        "description": "House rent payment",
+        "actual_category": "Rent",
+        "predicted_category": "Rent",
+        "confidence": 0.6016400980562183,
+        "correct": true
+      },
+      {
+        "description": "Miscellaneous expense",
+        "actual_category": "Other",
+        "predicted_category": "Other",
+        "confidence": 0.6081183325192492,
+        "correct": true
+      },
+      {
+        "description": "Shoes purchased online",
+        "actual_category": "Shopping",
+        "predicted_category": "Shopping",
+        "confidence": 0.28629033557684086,
+        "correct": true
+      },
+      {
+        "description": "Mobile recharge",
+        "actual_category": "Utilities",
+        "predicted_category": "Utilities",
+        "confidence": 0.18530776786556202,
+        "correct": true
+      },
+      {
+        "description": "Lunch at office cafeteria",
+        "actual_category": "Food",
+        "predicted_category": "Food",
+        "confidence": 0.5065426076664531,
+        "correct": true
+      },
+      {
+        "description": "General shopping expense",
+        "actual_category": "Other",
+        "predicted_category": "Other",
+        "confidence": 0.3789106054747621,
+        "correct": true
+      }
+    ],
+    "confidence_summary": {
+      "correct_mean": 0.4276008636477415,
+      "incorrect_mean": 0.24079861030397373,
+      "bands": [
+        [
+          "0.90-1.00",
+          0
+        ],
+        [
+          "0.80-0.89",
+          0
+        ],
+        [
+          "0.70-0.79",
+          0
+        ],
+        [
+          "0.60-0.69",
+          6
+        ],
+        [
+          "<0.60",
+          47
+        ]
+      ]
+    },
+    "top_confusions": [
+      {
+        "actual_category": "Entertainment",
+        "predicted_category": "Food",
+        "count": 2
+      },
+      {
+        "actual_category": "Education",
+        "predicted_category": "Shopping",
+        "count": 1
+      },
+      {
+        "actual_category": "Entertainment",
+        "predicted_category": "Education",
+        "count": 1
+      },
+      {
+        "actual_category": "Healthcare",
+        "predicted_category": "Food",
+        "count": 1
+      },
+      {
+        "actual_category": "Shopping",
+        "predicted_category": "Education",
+        "count": 1
+      },
+      {
+        "actual_category": "Transport",
+        "predicted_category": "Travel",
+        "count": 1
+      },
+      {
+        "actual_category": "Travel",
+        "predicted_category": "Rent",
+        "count": 1
+      },
+      {
+        "actual_category": "Travel",
+        "predicted_category": "Transport",
+        "count": 1
+      }
+    ]
+  },
+  "confidence_threshold": null,
+  "winning_model_decision": {
+    "selected_model_name": "Model A",
+    "selection_metric": "macro_f1",
+    "selection_reason": "Model A is published as the expense category inference model for version v1.0.0.",
+    "phase_6_report_path": "",
+    "decided_at": ""
+  },
+  "model_checksum": "0681ebe2312b11de9c7cd241b014bb5b02a8f7a43b470fa95b936de43ffea686",
+  "runtime_environment": {
+    "python": "3.14.7",
+    "scikit_learn": "1.9.1",
+    "pandas": "3.0.5"
+  }
+}

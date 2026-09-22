@@ -7,7 +7,7 @@ class CategoryPredictionInput(BaseModel):
         max_length=500,
     )
     amount: float = Field(
-        gt=0,
+        ge=0,
     )
 
 

@@ -3,6 +3,11 @@ from pathlib import Path
 
 import joblib
 
+from expense_analyzer.ml.exceptions import (
+    ModelArtifactNotFoundError,
+    ModelCompatibilityError,
+    ModelLoadError,
+)
 from expense_analyzer.ml.models.metadata import (
     deserialize_artifact_metadata,
     validate_artifact_metadata,
@@ -20,68 +25,171 @@ class ModelBundleLoader:
         self,
         artifacts_directory: Path | str = "artifacts/models",
     ) -> None:
-        self.artifacts_directory = Path(artifacts_directory)
+        self.artifacts_directory = Path(
+            artifacts_directory
+        )
 
     def load(
         self,
         model_name: str,
         model_version: str | None = None,
     ) -> ModelBundle:
+        """
+        Load and validate a persisted model bundle.
+
+        The loader validates:
+            - Model artifact existence.
+            - Metadata readability.
+            - Model name.
+            - Model version.
+            - Artifact metadata.
+            - Runtime compatibility.
+            - Artifact checksum.
+            - Model bundle structure.
+        """
+
         bundle_directory = self._get_bundle_directory(
             model_name,
             model_version,
         )
-        metadata_path = bundle_directory / self.METADATA_FILENAME
-        model_path = bundle_directory / self.MODEL_FILENAME
 
-        if not metadata_path.exists() or not model_path.exists():
-            raise FileNotFoundError(
-                f"Incomplete model bundle: {bundle_directory}"
+        metadata_path = (
+            bundle_directory / self.METADATA_FILENAME
+        )
+        model_path = (
+            bundle_directory / self.MODEL_FILENAME
+        )
+
+        # ---------------------------------------------------------
+        # 1. Validate artifact files exist
+        # ---------------------------------------------------------
+
+        if (
+            not metadata_path.exists()
+            or not model_path.exists()
+        ):
+            raise ModelArtifactNotFoundError(
+                f"Incomplete model bundle: "
+                f"{bundle_directory}"
             )
+
+        # ---------------------------------------------------------
+        # 2. Read and deserialize metadata
+        # ---------------------------------------------------------
 
         try:
             metadata = deserialize_artifact_metadata(
-                metadata_path.read_text(encoding="utf-8")
+                metadata_path.read_text(
+                    encoding="utf-8"
+                )
             )
-        except (OSError, TypeError, ValueError, KeyError) as error:
-            raise ValueError(
-                f"Model metadata is not readable: {metadata_path}"
+        except (
+            OSError,
+            TypeError,
+            ValueError,
+            KeyError,
+        ) as error:
+            raise ModelCompatibilityError(
+                "Model metadata is not readable: "
+                f"{metadata_path}"
             ) from error
+
+        # ---------------------------------------------------------
+        # 3. Validate metadata identity
+        # ---------------------------------------------------------
 
         if metadata.model_name != model_name:
-            raise ValueError("Model metadata name does not match the artifact path.")
-        if metadata.model_version != bundle_directory.name:
-            raise ValueError(
-                "Model metadata version does not match the artifact path."
+            raise ModelCompatibilityError(
+                "Model metadata name does not match "
+                "the artifact path."
             )
-        validate_artifact_metadata(metadata)
-        validate_runtime_compatibility(metadata)
-
-        try:
-            checksum = hashlib.sha256(model_path.read_bytes()).hexdigest()
-        except OSError as error:
-            raise ValueError(
-                f"Model artifact is not readable: {model_path}"
-            ) from error
-        if checksum != metadata.model_checksum:
-            raise ValueError("Model bundle checksum does not match metadata.")
-
-        try:
-            trained_model = joblib.load(model_path)
-        except Exception as error:
-            raise ValueError(
-                f"Model artifact is not readable: {model_path}"
-            ) from error
 
         if (
-            not hasattr(trained_model, "classifier")
-            or not hasattr(trained_model, "feature_pipeline")
+            metadata.model_version
+            != bundle_directory.name
+        ):
+            raise ModelCompatibilityError(
+                "Model metadata version does not match "
+                "the artifact path."
+            )
+
+        # ---------------------------------------------------------
+        # 4. Validate metadata and runtime compatibility
+        # ---------------------------------------------------------
+
+        try:
+            validate_artifact_metadata(metadata)
+
+            validate_runtime_compatibility(
+                metadata
+            )
+
+        except Exception as error:
+            raise ModelCompatibilityError(
+                "Model artifact is incompatible with "
+                "the current application."
+            ) from error
+
+        # ---------------------------------------------------------
+        # 5. Validate model checksum
+        # ---------------------------------------------------------
+
+        try:
+            checksum = hashlib.sha256(
+                model_path.read_bytes()
+            ).hexdigest()
+
+        except OSError as error:
+            raise ModelLoadError(
+                "Model artifact is not readable: "
+                f"{model_path}"
+            ) from error
+
+        if checksum != metadata.model_checksum:
+            raise ModelCompatibilityError(
+                "Model bundle checksum does not "
+                "match metadata."
+            )
+
+        # ---------------------------------------------------------
+        # 6. Load model artifact
+        # ---------------------------------------------------------
+
+        try:
+            trained_model = joblib.load(
+                model_path
+            )
+
+        except Exception as error:
+            raise ModelLoadError(
+                "Model artifact could not be loaded: "
+                f"{model_path}"
+            ) from error
+
+        # ---------------------------------------------------------
+        # 7. Validate loaded model structure
+        # ---------------------------------------------------------
+
+        if (
+            not hasattr(
+                trained_model,
+                "classifier",
+            )
+            or not hasattr(
+                trained_model,
+                "feature_pipeline",
+            )
             or trained_model.classifier is None
             or trained_model.feature_pipeline is None
         ):
-            raise ValueError(
-                "Model artifact does not contain a complete model bundle."
+            raise ModelCompatibilityError(
+                "Model artifact does not contain "
+                "a complete model bundle."
             )
+
+        # ---------------------------------------------------------
+        # 8. Return normalized ModelBundle
+        # ---------------------------------------------------------
 
         return ModelBundle(
             classifier=trained_model.classifier,
@@ -94,33 +202,65 @@ class ModelBundleLoader:
         model_name: str,
         model_version: str | None,
     ) -> Path:
-        model_directory = self.artifacts_directory / model_name
-        if not model_directory.exists():
-            raise FileNotFoundError(f"Model not found: {model_name}")
+        model_directory = (
+            self.artifacts_directory / model_name
+        )
 
-        version = model_version or self._get_latest_version(model_directory)
-        return get_bundle_directory(
+        if not model_directory.exists():
+            raise ModelArtifactNotFoundError(
+                f"Model not found: {model_name}"
+            )
+
+        version = (
+            model_version
+            or self._get_latest_version(
+                model_directory
+            )
+        )
+
+        bundle_directory = get_bundle_directory(
             self.artifacts_directory,
             model_name,
             version,
         )
 
+        if not bundle_directory.exists():
+            raise ModelArtifactNotFoundError(
+                f"Model version '{version}' not found "
+                f"for '{model_name}'."
+            )
+
+        return bundle_directory
+
     @staticmethod
-    def _get_latest_version(model_directory: Path) -> str:
+    def _get_latest_version(
+        model_directory: Path,
+    ) -> str:
         versions = [
             path.name
             for path in model_directory.iterdir()
             if path.is_dir()
         ]
+
         if not versions:
-            raise FileNotFoundError(
-                f"No model versions found in {model_directory}"
+            raise ModelArtifactNotFoundError(
+                f"No model versions found in "
+                f"{model_directory}"
             )
 
-        return max(
-            versions,
-            key=lambda version: tuple(
-                int(part)
-                for part in version.removeprefix("v").split(".")
-            ),
-        )
+        try:
+            return max(
+                versions,
+                key=lambda version: tuple(
+                    int(part)
+                    for part in version
+                    .removeprefix("v")
+                    .split(".")
+                ),
+            )
+
+        except (TypeError, ValueError) as error:
+            raise ModelCompatibilityError(
+                "Model versions contain an invalid "
+                "version format."
+            ) from error
