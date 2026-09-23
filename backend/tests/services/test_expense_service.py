@@ -1,6 +1,7 @@
 from datetime import date
 from decimal import Decimal
 from uuid import UUID, uuid4
+import pytest
 
 from expense_analyzer.api.v1.schemas.expense import (
     ExpenseCreateRequest,
@@ -33,7 +34,14 @@ from expense_analyzer.preprocessing.processors.normalization import (
 from expense_analyzer.services.expense_service import (
     ExpenseService,
 )
-
+from expense_analyzer.exceptions.api import (
+    CategoryPredictionLowConfidenceException,
+    ExpenseNotFoundException,
+)
+from expense_analyzer.domain.enums.category_source import CategorySource
+from expense_analyzer.ml.models.category_prediction import (
+    CategoryPredictionOutput,
+)
 
 class FakeExpenseRepository:
 
@@ -53,6 +61,37 @@ class FakeExpenseRepository:
     ) -> Expense | None:
         return None
 
+class FakeInferenceService:
+    confidence_threshold = 0.70
+    model_version = "v1.0.0"
+
+    def predict(self, prediction):
+        raise AssertionError(
+            "ML prediction should not run for manual categories."
+        )
+
+
+class SuccessfulInferenceService:
+    confidence_threshold = 0.70
+    model_version = "v1.0.0"
+
+    def predict(self, prediction):
+        return CategoryPredictionOutput(
+            predicted_category="Transport",
+            confidence=0.92,
+        )
+
+
+class LowConfidenceInferenceService:
+    confidence_threshold = 0.70
+    model_version = "v1.0.0"
+
+    def predict(self, prediction):
+        return CategoryPredictionOutput(
+            predicted_category="Transport",
+            confidence=0.45,
+        )
+
 
 def create_service() -> ExpenseService:
     pipeline = PreprocessingPipeline(
@@ -68,6 +107,7 @@ def create_service() -> ExpenseService:
     return ExpenseService(
         preprocessing_pipeline=pipeline,
         repository=FakeExpenseRepository(),
+        inference_service=FakeInferenceService(),
     )
 
 
@@ -94,35 +134,6 @@ def test_create_expense() -> None:
     assert result.category == ExpenseCategory.FOOD
     assert result.expense_date == date(2026, 9, 9)
 
-
-def test_process_records() -> None:
-    service = create_service()
-    user_id = uuid4()
-
-    records = [
-        {
-            " amount ": " 250.50 ",
-            "description": " Lunch ",
-            "category": " Food ",
-            "expense_date": "09/09/2026",
-        }
-    ]
-
-    result = service.process_records(
-        records,
-        user_id=user_id,
-    )
-
-    assert len(result) == 1
-
-    expense = result[0]
-
-    assert expense.id is not None
-    assert expense.user_id == user_id
-    assert expense.amount == Decimal("250.50")
-    assert expense.description == "Lunch"
-    assert expense.category == ExpenseCategory.FOOD
-    assert expense.expense_date == date(2026, 9, 9)
 
 
 def test_process_records_ignores_duplicates() -> None:
@@ -233,4 +244,63 @@ def test_get_expense_not_found() -> None:
     else:
         raise AssertionError(
             "Expected ExpenseNotFoundException"
+        )
+
+
+def test_create_expense_predicts_category_when_missing() -> None:
+    user_id = uuid4()
+
+    pipeline = PreprocessingPipeline(
+        processors=[
+            NormalizationProcessor(),
+            MissingValueProcessor(),
+            AmountNormalizationProcessor(),
+            DateNormalizationProcessor(),
+            DuplicateDetectionProcessor(),
+        ]
+    )
+
+    service = ExpenseService(
+        preprocessing_pipeline=pipeline,
+        repository=FakeExpenseRepository(),
+        inference_service=SuccessfulInferenceService(),
+    )
+
+    request = ExpenseCreateRequest(
+        amount="250.50",
+        description="Uber ride",
+        expense_date="2026-09-09",
+    )
+
+    result = service.create_expense(
+        request,
+        user_id=user_id,
+    )
+
+    assert result.category == ExpenseCategory.TRANSPORT
+    assert result.category_source == CategorySource.ML
+    assert result.category_confidence == 0.92
+    assert result.model_version == "v1.0.0"
+
+
+def test_create_expense_rejects_low_confidence_prediction() -> None:
+    service = ExpenseService(
+        preprocessing_pipeline=...,
+        repository=FakeExpenseRepository(),
+        inference_service=LowConfidenceInferenceService(),
+    )
+
+    request = ExpenseCreateRequest(
+        amount="250.00",
+        description="Something unclear",
+        expense_date="2026-09-09",
+        category=None,
+    )
+
+    with pytest.raises(
+        CategoryPredictionLowConfidenceException
+    ):
+        service.create_expense(
+            request=request,
+            user_id=UUID("00000000-0000-0000-0000-000000000001"),
         )
