@@ -16,7 +16,13 @@ class ExpenseValidationModel(BaseModel):
 
     @field_validator("category", mode="before")
     @classmethod
-    def normalize_category(cls, value: ExpenseCategory | str) -> ExpenseCategory | str:
+    def normalize_category(
+        cls,
+        value: ExpenseCategory | str | None,
+    ) -> ExpenseCategory | str | None:
+        if value is None:
+            return None
+
         if isinstance(value, str):
             try:
                 return ExpenseCategory[value]

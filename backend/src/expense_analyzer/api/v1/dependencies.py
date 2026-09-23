@@ -110,20 +110,6 @@ def get_expense_repository() -> ExpenseRepository:
     return ExpenseRepository()
 
 
-def get_expense_service(
-    pipeline: PreprocessingPipeline = Depends(
-        get_preprocessing_pipeline
-    ),
-    repository: ExpenseRepository = Depends(
-        get_expense_repository
-    ),
-) -> ExpenseService:
-    return ExpenseService(
-        preprocessing_pipeline=pipeline,
-        repository=repository,
-    )
-
-
 def get_analytics_service(
     repository: ExpenseRepository = Depends(
         get_expense_repository
@@ -172,4 +158,23 @@ def get_inference_service() -> InferenceService:
     return InferenceService(
         artifacts_directory=settings.model_artifacts_directory,
         model_version=settings.model_version,
+        confidence_threshold=settings.ml_confidence_threshold,
+    )
+
+
+def get_expense_service(
+    pipeline: PreprocessingPipeline = Depends(
+        get_preprocessing_pipeline
+    ),
+    repository: ExpenseRepository = Depends(
+        get_expense_repository
+    ),
+    inference_service: InferenceService = Depends(
+        get_inference_service
+    ),
+) -> ExpenseService:
+    return ExpenseService(
+        preprocessing_pipeline=pipeline,
+        repository=repository,
+        inference_service=inference_service,
     )

@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     # Clients cannot select the model version.
     model_version: str = "v1.0.0"
     model_artifacts_directory: str = "artifacts/models"
+    ml_confidence_threshold: float = 0.70
 
     model_config = SettingsConfigDict(
         env_file=os.getenv("ENV_FILE", ".env"),

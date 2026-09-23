@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from expense_analyzer.exceptions.api import (
     ExpenseNotFoundException,
+    CategoryPredictionLowConfidenceException
 )
 
 from expense_analyzer.exceptions.expense_import import (
@@ -179,6 +180,24 @@ async def predictor_unavailable_handler(
             "error": {
                 "code": "PREDICTOR_UNAVAILABLE",
                 "message": "Prediction could not be completed.",
+            }
+        },
+    )
+
+
+async def category_prediction_low_confidence_handler(
+    request: Request,
+    exc: CategoryPredictionLowConfidenceException,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": {
+                "code": "CATEGORY_PREDICTION_LOW_CONFIDENCE",
+                "message": (
+                    "Category could not be predicted with "
+                    "sufficient confidence. Please provide a category."
+                ),
             }
         },
     )

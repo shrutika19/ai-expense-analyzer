@@ -7,6 +7,7 @@ from expense_analyzer.api.v1.schemas.expense import (
 from expense_analyzer.domain.entities.expense import Expense
 from expense_analyzer.exceptions.api import (
     ExpenseNotFoundException,
+    CategoryPredictionLowConfidenceException,
 )
 from expense_analyzer.preprocessing.pipeline import PreprocessingPipeline
 from expense_analyzer.repositories.expense_repository import (
@@ -15,7 +16,19 @@ from expense_analyzer.repositories.expense_repository import (
 from expense_analyzer.validation.validators.expense_validator import (
     ExpenseValidationModel,
 )
-
+from expense_analyzer.ml.inference.service import (
+    ConfidenceLevel,
+    InferenceService,
+)
+from expense_analyzer.ml.models.category_prediction import (
+    CategoryPredictionInput,
+)
+from expense_analyzer.domain.enums.category_source import (
+    CategorySource,
+)
+from expense_analyzer.domain.enums.expense_category import (
+    ExpenseCategory,
+)
 
 class ExpenseService:
 
@@ -23,21 +36,54 @@ class ExpenseService:
         self,
         preprocessing_pipeline: PreprocessingPipeline,
         repository: ExpenseRepository,
+        inference_service: InferenceService,
     ) -> None:
         self.preprocessing_pipeline = preprocessing_pipeline
         self.repository = repository
+        self.inference_service = inference_service
 
     def create_expense(
         self,
         request: ExpenseCreateRequest,
         user_id: UUID,
     ) -> Expense:
+        category = request.category
+        category_source = CategorySource.MANUAL
+        category_confidence = None
+        model_version = None
+
+        if category is None:
+            prediction = self.inference_service.predict(
+                CategoryPredictionInput(
+                    description=request.description,
+                    amount=float(request.amount),
+                )
+            )
+
+            if (
+                self.inference_service.confidence_threshold is not None
+                and prediction.confidence
+                < self.inference_service.confidence_threshold
+            ):
+                raise CategoryPredictionLowConfidenceException(
+                    "Category prediction confidence is below "
+                    "the configured threshold."
+                )
+
+            category = ExpenseCategory(prediction.predicted_category)
+            category_source = CategorySource.ML
+            category_confidence = prediction.confidence
+            model_version = self.inference_service.model_version
+
         expense = Expense(
             amount=request.amount,
             description=request.description,
-            category=request.category,
+            category=category,
             expense_date=request.expense_date,
             user_id=user_id,
+            category_source=category_source,
+            category_confidence=category_confidence,
+            model_version=model_version,
         )
 
         return self.repository.save(expense)
@@ -63,10 +109,8 @@ class ExpenseService:
                 if key != "_is_duplicate"
             }
 
-            validated_record = (
-                ExpenseValidationModel.model_validate(
-                    expense_record
-                )
+            validated_record = ExpenseValidationModel.model_validate(
+                expense_record
             )
 
             expense = Expense(

@@ -1,7 +1,7 @@
 from uuid import UUID
 
 
-def test_create_expense(client,auth_headers) -> None:
+def test_create_expense(client, auth_headers) -> None:
     response = client.post(
         "/api/v1/expenses",
         json={
@@ -17,19 +17,21 @@ def test_create_expense(client,auth_headers) -> None:
 
     data = response.json()
 
+    assert data["id"]
     assert UUID(data["id"])
-    assert data == {
-        "id": data["id"],
-        "amount": "250.50",
-        "description": "Lunch",
-        "category": "Food",
-        "expense_date": "2026-09-09",
-    }
+    assert data["amount"] == "250.50"
+    assert data["description"] == "Lunch"
+    assert data["category"] == "Food"
+    assert data["expense_date"] == "2026-09-09"
+    assert data["category_source"] == "manual"
+    assert data["category_confidence"] is None
+    assert data["model_version"] is None
 
 
-
-
-def test_create_expense_rejects_invalid_amount(client,auth_headers) -> None:
+def test_create_expense_rejects_invalid_amount(
+    client,
+    auth_headers,
+) -> None:
     response = client.post(
         "/api/v1/expenses",
         json={
@@ -44,9 +46,10 @@ def test_create_expense_rejects_invalid_amount(client,auth_headers) -> None:
     assert response.status_code == 422
 
 
-
-
-def test_create_expense_rejects_invalid_category(client,auth_headers) -> None:
+def test_create_expense_rejects_invalid_category(
+    client,
+    auth_headers,
+) -> None:
     response = client.post(
         "/api/v1/expenses",
         json={
@@ -61,9 +64,10 @@ def test_create_expense_rejects_invalid_category(client,auth_headers) -> None:
     assert response.status_code == 422
 
 
-
-
-def test_create_expense_rejects_missing_description(client,auth_headers) -> None:
+def test_create_expense_rejects_missing_description(
+    client,
+    auth_headers,
+) -> None:
     response = client.post(
         "/api/v1/expenses",
         json={
@@ -77,9 +81,10 @@ def test_create_expense_rejects_missing_description(client,auth_headers) -> None
     assert response.status_code == 422
 
 
-
-
-def test_create_expense_rejects_extra_fields(client,auth_headers) -> None:
+def test_create_expense_rejects_extra_fields(
+    client,
+    auth_headers,
+) -> None:
     response = client.post(
         "/api/v1/expenses",
         json={
@@ -95,8 +100,10 @@ def test_create_expense_rejects_extra_fields(client,auth_headers) -> None:
     assert response.status_code == 422
 
 
-
-def test_create_expense_persists_to_database(client,auth_headers) -> None:
+def test_create_expense_persists_to_database(
+    client,
+    auth_headers,
+) -> None:
     response = client.post(
         "/api/v1/expenses",
         json={
@@ -117,10 +124,12 @@ def test_create_expense_persists_to_database(client,auth_headers) -> None:
     assert data["description"] == "Lunch"
     assert data["category"] == "Food"
     assert data["expense_date"] == "2026-09-09"
+    assert data["category_source"] == "manual"
+    assert data["category_confidence"] is None
+    assert data["model_version"] is None
 
 
-
-def test_get_expenses(client,auth_headers) -> None:
+def test_get_expenses(client, auth_headers) -> None:
     create_response = client.post(
         "/api/v1/expenses",
         json={
@@ -136,7 +145,10 @@ def test_get_expenses(client,auth_headers) -> None:
 
     created_expense = create_response.json()
 
-    response = client.get("/api/v1/expenses", headers=auth_headers)
+    response = client.get(
+        "/api/v1/expenses",
+        headers=auth_headers,
+    )
 
     assert response.status_code == 200
 
@@ -154,11 +166,15 @@ def test_get_expenses(client,auth_headers) -> None:
     assert matching_expense["description"] == "Uber"
     assert matching_expense["category"] == "Travel"
     assert matching_expense["expense_date"] == "2026-09-08"
+    assert matching_expense["category_source"] == "manual"
+    assert matching_expense["category_confidence"] is None
+    assert matching_expense["model_version"] is None
 
 
-
-
-def test_get_expenses_returns_list(client, auth_headers) -> None:
+def test_get_expenses_returns_list(
+    client,
+    auth_headers,
+) -> None:
     response = client.get(
         "/api/v1/expenses",
         headers=auth_headers,
@@ -166,3 +182,4 @@ def test_get_expenses_returns_list(client, auth_headers) -> None:
 
     assert response.status_code == 200
     assert isinstance(response.json(), list)
+

@@ -23,6 +23,9 @@ CREATE TABLE IF NOT EXISTS expenses (
     description VARCHAR(500) NOT NULL,
     category VARCHAR(50) NOT NULL,
     expense_date DATE NOT NULL,
+    category_source VARCHAR(20) NOT NULL DEFAULT 'manual',
+    category_confidence DOUBLE PRECISION,
+    model_version VARCHAR(50),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_expenses_user

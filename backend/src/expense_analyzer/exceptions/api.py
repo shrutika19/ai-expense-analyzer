@@ -6,3 +6,7 @@ class ExpenseNotFoundException(Exception):
         super().__init__(
             f"Expense with id '{expense_id}' was not found."
         )
+
+
+class CategoryPredictionLowConfidenceException(Exception):
+    """Raised when ML confidence is below the configured threshold."""

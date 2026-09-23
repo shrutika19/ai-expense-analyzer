@@ -8,7 +8,9 @@ from expense_analyzer.infrastructure.database.connection import (
 from expense_analyzer.domain.enums.expense_category import (
     ExpenseCategory,
 )
-
+from expense_analyzer.domain.enums.category_source import (
+    CategorySource,
+)
 
 class ExpenseRepository:
 
@@ -27,9 +29,12 @@ class ExpenseRepository:
                 amount,
                 description,
                 category,
-                expense_date
+                expense_date,
+                category_source,
+                category_confidence,
+                model_version
             )
-            VALUES (%s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s,%s, %s, %s)
         """
 
         with get_connection() as connection:
@@ -38,12 +43,15 @@ class ExpenseRepository:
                     cursor.execute(
                         query,
                         (
-                            expense.id,
-                            expense.user_id,
-                            expense.amount,
-                            expense.description,
-                            expense.category.value,
-                            expense.expense_date,
+                                expense.id,
+                                expense.user_id,
+                                expense.amount,
+                                expense.description,
+                                expense.category.value,
+                                expense.expense_date,
+                                expense.category_source.value,
+                                expense.category_confidence,
+                                expense.model_version,
                         ),
                     )
 
@@ -57,7 +65,10 @@ class ExpenseRepository:
                 amount,
                 description,
                 category,
-                expense_date
+                expense_date,
+                category_source,
+                category_confidence,
+                model_version
             FROM expenses
             WHERE user_id = %s
             ORDER BY expense_date DESC, created_at DESC
@@ -83,6 +94,9 @@ class ExpenseRepository:
                 description,
                 category,
                 expense_date
+                category_source,
+                category_confidence,
+                model_version
             FROM expenses
             WHERE id = %s
                 AND user_id = %s
@@ -109,4 +123,7 @@ class ExpenseRepository:
             description=row[3],
             category=ExpenseCategory(row[4]),
             expense_date=row[5],
+            category_source=CategorySource(row[6]),
+            category_confidence=row[7],
+            model_version=row[8],
         )
