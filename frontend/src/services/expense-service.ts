@@ -1,6 +1,14 @@
+import { api } from "@/services/api-client";
+import type { Expense, NewExpense } from "@/types";
 import type { ExpenseImportResponse } from "@/types/expense";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+type ApiExpense = Omit<Expense, "merchant" | "date"> & { description: string; expense_date: string };
+const mapExpense = (expense: ApiExpense): Expense => ({ ...expense, amount: Number(expense.amount), merchant: expense.description, date: expense.expense_date });
+export const getExpenses = async () => (await api<ApiExpense[]>("/expenses")).map(mapExpense);
+export const createExpense = async (input: NewExpense) => mapExpense(await api<ApiExpense>("/expenses", {
+  method: "POST", body: JSON.stringify({ description: input.merchant, amount: input.amount,
+    expense_date: input.date, category: input.category || undefined }),
+}));
 
 export async function importExpenses(
   file: File,
@@ -9,30 +17,5 @@ export async function importExpenses(
 
   formData.append("file", file);
 
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/expenses/import`,
-    {
-      method: "POST",
-      body: formData,
-    },
-  );
-
-  if (!response.ok) {
-    let message = "Failed to import expenses.";
-
-    try {
-      const error = await response.json();
-
-      message =
-        error?.error?.message ??
-        error?.detail ??
-        message;
-    } catch {
-      // Keep default message.
-    }
-
-    throw new Error(message);
-  }
-
-  return response.json();
+  return api<ExpenseImportResponse>("/expenses/import", { method: "POST", body: formData });
 }

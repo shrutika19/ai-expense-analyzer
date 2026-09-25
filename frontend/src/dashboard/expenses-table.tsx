@@ -171,6 +171,7 @@ export function ExpensesTable({ expenses, loading }: { expenses: Expense[]; load
                   <SortHeader label="Date" k="date" active={sortKey === "date"} asc={asc} onToggle={toggleSort} />
                   <SortHeader label="Merchant" k="merchant" active={sortKey === "merchant"} asc={asc} onToggle={toggleSort} />
                   <SortHeader label="Category" k="category" active={sortKey === "category"} asc={asc} onToggle={toggleSort} />
+                  <TableHead>Source</TableHead>
                   <SortHeader label="Amount" k="amount" right active={sortKey === "amount"} asc={asc} onToggle={toggleSort} />
                   <TableHead className="w-10" />
                 </TableRow>
@@ -184,6 +185,9 @@ export function ExpensesTable({ expenses, loading }: { expenses: Expense[]; load
                     <TableCell className="font-medium">{e.merchant}</TableCell>
                     <TableCell>
                       <Badge variant="secondary">{e.category}</Badge>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {e.category_source === "ml" ? "Auto categorized" : "Manual"}
                     </TableCell>
                     <TableCell className="text-right font-semibold tabular-nums">
                       {formatMoney(e.amount, true)}

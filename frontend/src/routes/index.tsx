@@ -7,6 +7,7 @@ import { InsightsPanel } from "@/dashboard/insights-panel";
 import { KpiCards } from "@/dashboard/kpi-cards";
 import { RecentTransactions } from "@/dashboard/recent-transactions";
 import { useRangedExpenses } from "@/hooks/use-range";
+import { useAnalyticsSummary } from "@/hooks/use-analytics-summary";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/")({
 function DashboardPage() {
   const { expenses, status, reload } = useRangedExpenses();
   const loading = status === "loading";
+  const { summary, loading: summaryLoading } = useAnalyticsSummary();
 
   return (
     <AppShell title="Dashboard" description="Your spending at a glance">
@@ -37,7 +39,7 @@ function DashboardPage() {
         <ErrorBlock onRetry={reload} />
       ) : (
         <>
-          <KpiCards expenses={expenses} loading={loading} />
+          <KpiCards expenses={expenses} summary={summary} loading={loading || summaryLoading} />
 
           <SectionHeading title="Trends" description="How spending moves across the range" />
           <div className="grid gap-4 lg:grid-cols-2">

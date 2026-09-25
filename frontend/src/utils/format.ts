@@ -1,12 +1,12 @@
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
-  currency: "USD",
+  currency: "INR",
   maximumFractionDigits: 0,
 });
 
 const currencyPrecise = new Intl.NumberFormat("en-US", {
   style: "currency",
-  currency: "USD",
+  currency: "INR",
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });

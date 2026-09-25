@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
-import { MOCK_EXPENSES } from "@/common/mock-expenses";
+import { createExpense, getExpenses } from "@/services/expense-service";
 import type { Expense, LoadStatus, NewExpense } from "@/types";
 
 /**
@@ -14,7 +14,7 @@ interface ExpensesContextValue {
   expenses: Expense[];
   status: LoadStatus;
   reload: () => void;
-  addExpense: (input: NewExpense) => void;
+  addExpense: (input: NewExpense) => Promise<Expense>;
   deleteExpense: (id: string) => void;
 }
 
@@ -27,25 +27,19 @@ export function ExpensesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    const timer = setTimeout(() => {
-      if (!active) return;
-      setExpenses(MOCK_EXPENSES);
-      setStatus("ready");
-    }, 650);
+    getExpenses().then((items) => { if (active) { setExpenses(items); setStatus("ready"); } })
+      .catch(() => { if (active) setStatus("error"); });
     return () => {
       active = false;
-      clearTimeout(timer);
     };
   }, [nonce]);
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
-  const addExpense = useCallback((input: NewExpense) => {
-    setExpenses((prev) =>
-      [{ ...input, id: `exp-local-${Date.now()}` }, ...prev].sort((a, b) =>
-        b.date.localeCompare(a.date),
-      ),
-    );
+  const addExpense = useCallback(async (input: NewExpense) => {
+    const expense = await createExpense(input);
+    setExpenses((prev) => [expense, ...prev].sort((a, b) => b.date.localeCompare(a.date)));
+    return expense;
   }, []);
 
   const deleteExpense = useCallback((id: string) => {

@@ -1,26 +1,23 @@
 export type ExpenseCategory =
-  | "Groceries"
-  | "Dining"
+  | "Food"
+  | "Groceries" | "Dining"
   | "Transport"
+  | "Rent"
   | "Housing"
   | "Utilities"
   | "Shopping"
-  | "Health"
-  | "Entertainment"
-  | "Travel"
-  | "Subscriptions";
+  | "Healthcare" | "Health" | "Entertainment" | "Travel" | "Education" | "Other" | "Subscriptions";
 
 export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
-  "Groceries",
-  "Dining",
+  "Food",
   "Transport",
-  "Housing",
+  "Rent",
   "Utilities",
   "Shopping",
-  "Health",
+  "Healthcare",
   "Entertainment",
   "Travel",
-  "Subscriptions",
+  "Education", "Other",
 ];
 
 export interface Expense {
@@ -31,9 +28,12 @@ export interface Expense {
   category: ExpenseCategory;
   amount: number;
   note?: string;
+  category_source?: "manual" | "ml";
+  category_confidence?: number | null;
+  model_version?: string | null;
 }
 
-export type NewExpense = Omit<Expense, "id">;
+export type NewExpense = Omit<Expense, "id" | "category"> & { category?: ExpenseCategory };
 
 export interface Kpi {
   label: string;

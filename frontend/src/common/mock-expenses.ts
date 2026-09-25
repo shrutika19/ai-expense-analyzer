@@ -5,7 +5,7 @@ import type { Expense, ExpenseCategory } from "@/types";
  * nothing here is persisted and no network call is made.
  */
 
-const MERCHANTS: Record<ExpenseCategory, string[]> = {
+const MERCHANTS: Partial<Record<ExpenseCategory, string[]>> = {
   Groceries: ["Green Basket", "Freshmart", "Corner Grocer"],
   Dining: ["Noodle Bar", "Cafe Lumen", "Taco Yard", "Sunset Diner"],
   Transport: ["Metro Card", "RideNow", "City Parking", "Fuel Stop"],
@@ -87,7 +87,7 @@ function buildExpenses(): Expense[] {
       out.push({
         id: `exp-${year}${month}-${i}`,
         date: iso,
-        merchant: pick(MERCHANTS[category], rand()),
+        merchant: pick(MERCHANTS[category] ?? ["Expense"], rand()),
         category,
         amount,
       });

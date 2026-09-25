@@ -5,8 +5,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Expense } from "@/types";
 import { averageExpense, byCategory, monthOverMonth, totalSpend } from "@/utils/analytics";
 import { formatMoney, formatNumber, formatPct } from "@/utils/format";
+import type { AnalyticsSummary } from "@/services/analytics-service";
 
-export function KpiCards({ expenses, loading }: { expenses: Expense[]; loading?: boolean }) {
+export function KpiCards({ expenses, loading, summary }: { expenses: Expense[]; loading?: boolean; summary?: AnalyticsSummary | null }) {
   if (loading) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -23,20 +24,20 @@ export function KpiCards({ expenses, loading }: { expenses: Expense[]; loading?:
   const cards = [
     {
       label: "Total expenses",
-      value: formatMoney(totalSpend(expenses)),
-      hint: "Across the selected range",
+      value: formatMoney(summary ? Number(summary.total_amount) : totalSpend(expenses)),
+      hint: "Across all recorded expenses",
       icon: Wallet,
       delta: mom,
     },
     {
       label: "Average expense",
-      value: formatMoney(averageExpense(expenses), true),
+      value: formatMoney(summary ? Number(summary.average_amount) : averageExpense(expenses), true),
       hint: "Per transaction",
       icon: TrendingUp,
     },
     {
       label: "Transactions",
-      value: formatNumber(expenses.length),
+      value: formatNumber(summary?.expense_count ?? expenses.length),
       hint: "Recorded entries",
       icon: Receipt,
     },

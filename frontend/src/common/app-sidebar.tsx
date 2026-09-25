@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BarChart3, LayoutDashboard, MessageSquareText, Receipt, UploadCloud } from "lucide-react";
+import { BarChart3, LayoutDashboard, LogOut, MessageSquareText, Receipt, UploadCloud } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 import {
   Sidebar,
@@ -27,6 +28,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const { user, logout } = useAuth();
 
   return (
     <Sidebar collapsible="icon">
@@ -71,11 +73,9 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        {!collapsed && (
-          <p className="px-2 pb-1 text-xs text-muted-foreground">
-            Demo data only — no account connected.
-          </p>
-        )}
+        <button className="flex items-center gap-2 px-2 text-sm text-muted-foreground hover:text-foreground" onClick={() => { logout(); window.location.assign("/login"); }}>
+          <LogOut className="size-4" /> {!collapsed && `Sign out ${user?.email ?? ""}`}
+        </button>
       </SidebarFooter>
     </Sidebar>
   );

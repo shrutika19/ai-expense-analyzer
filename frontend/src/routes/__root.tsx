@@ -8,6 +8,7 @@ import {
 
 import { Toaster } from "@/components/ui/sonner";
 import { ExpensesProvider } from "@/hooks/use-expenses";
+import { AuthProvider } from "@/hooks/use-auth";
 import { RangeProvider } from "@/hooks/use-range";
 
 function NotFoundComponent() {
@@ -106,13 +107,13 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ExpensesProvider>
+      <AuthProvider><ExpensesProvider>
         <RangeProvider>
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
           <Toaster richColors position="top-right" />
         </RangeProvider>
-      </ExpensesProvider>
+      </ExpensesProvider></AuthProvider>
     </QueryClientProvider>
   );
 }
