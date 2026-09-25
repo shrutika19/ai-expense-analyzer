@@ -160,6 +160,7 @@ def get_inference_service() -> InferenceService:
         artifacts_directory=settings.model_artifacts_directory,
         model_version=settings.model_version,
         confidence_threshold=settings.ml_confidence_threshold,
+        model_name=settings.model_name,
     )
 
 

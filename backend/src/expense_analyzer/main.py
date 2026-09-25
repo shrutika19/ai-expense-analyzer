@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
@@ -42,6 +44,7 @@ from expense_analyzer.ml.exceptions import (
     ModelUnavailableError,
     PredictorUnavailableError,
 )
+from expense_analyzer.api.v1.dependencies import get_inference_service
 
 
 settings = get_settings()
@@ -55,6 +58,15 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
+logger = logging.getLogger(__name__)
+
+
+@app.on_event("startup")
+def load_production_model() -> None:
+    """Eagerly validate the configured artifact; API startup never trains."""
+    service = get_inference_service()
+    logger.info("ml_model_loaded model_name=%s model_version=%s",
+                service.model_name, service.model_version)
 
 
 origins = [
