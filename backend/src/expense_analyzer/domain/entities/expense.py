@@ -20,6 +20,7 @@ class Expense:
     expense_date: date
     user_id: UUID
     category_source: CategorySource = CategorySource.MANUAL
+    predicted_category: ExpenseCategory | None = None
     category_confidence: float | None = None
     model_version: str | None = None
     id: UUID = field(default_factory=uuid4)
