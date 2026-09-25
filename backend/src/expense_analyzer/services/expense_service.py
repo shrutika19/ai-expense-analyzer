@@ -49,17 +49,19 @@ class ExpenseService:
     ) -> Expense:
         category = request.category
         category_source = CategorySource.MANUAL
-        category_confidence = None
-        model_version = None
+        # Always preserve the prediction.  A manual category is ground truth,
+        # not a reason to discard the model output used for comparison.
+        prediction = self.inference_service.predict(
+            CategoryPredictionInput(
+                description=request.description,
+                amount=float(request.amount),
+            )
+        )
+        predicted_category = ExpenseCategory(prediction.predicted_category)
+        category_confidence = prediction.confidence
+        model_version = self.inference_service.model_version
 
         if category is None:
-            prediction = self.inference_service.predict(
-                CategoryPredictionInput(
-                    description=request.description,
-                    amount=float(request.amount),
-                )
-            )
-
             if (
                 self.inference_service.confidence_threshold is not None
                 and prediction.confidence
@@ -70,7 +72,7 @@ class ExpenseService:
                     "the configured threshold."
                 )
 
-            category = ExpenseCategory(prediction.predicted_category)
+            category = predicted_category
             category_source = CategorySource.ML
             category_confidence = prediction.confidence
             model_version = self.inference_service.model_version
@@ -82,11 +84,20 @@ class ExpenseService:
             expense_date=request.expense_date,
             user_id=user_id,
             category_source=category_source,
+            predicted_category=predicted_category,
             category_confidence=category_confidence,
             model_version=model_version,
         )
 
         return self.repository.save(expense)
+
+    def correct_category(
+        self, expense_id: UUID, category: ExpenseCategory, user_id: UUID
+    ) -> Expense:
+        expense = self.repository.update_category(expense_id, user_id, category)
+        if expense is None:
+            raise ExpenseNotFoundException(str(expense_id))
+        return expense
 
     def process_records(
         self,

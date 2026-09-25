@@ -31,10 +31,11 @@ class ExpenseRepository:
                 category,
                 expense_date,
                 category_source,
+                predicted_category,
                 category_confidence,
                 model_version
             )
-            VALUES (%s, %s, %s, %s, %s, %s,%s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s,%s, %s, %s, %s)
         """
 
         with get_connection() as connection:
@@ -50,6 +51,8 @@ class ExpenseRepository:
                                 expense.category.value,
                                 expense.expense_date,
                                 expense.category_source.value,
+                                (expense.predicted_category.value
+                                 if expense.predicted_category else None),
                                 expense.category_confidence,
                                 expense.model_version,
                         ),
@@ -67,6 +70,7 @@ class ExpenseRepository:
                 category,
                 expense_date,
                 category_source,
+                predicted_category,
                 category_confidence,
                 model_version
             FROM expenses
@@ -93,8 +97,9 @@ class ExpenseRepository:
                 amount,
                 description,
                 category,
-                expense_date
+                expense_date,
                 category_source,
+                predicted_category,
                 category_confidence,
                 model_version
             FROM expenses
@@ -124,6 +129,73 @@ class ExpenseRepository:
             category=ExpenseCategory(row[4]),
             expense_date=row[5],
             category_source=CategorySource(row[6]),
-            category_confidence=row[7],
-            model_version=row[8],
+            predicted_category=(ExpenseCategory(row[7]) if row[7] else None),
+            category_confidence=row[8],
+            model_version=row[9],
         )
+
+    def update_category(
+        self, expense_id: UUID, user_id: UUID, category: ExpenseCategory
+    ) -> Expense | None:
+        query = """
+            UPDATE expenses
+            SET category = %s, category_source = %s
+            WHERE id = %s AND user_id = %s
+            RETURNING id, user_id, amount, description, category, expense_date,
+                      category_source, predicted_category, category_confidence,
+                      model_version
+        """
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(query, (category.value, CategorySource.MANUAL.value,
+                                       expense_id, user_id))
+                row = cursor.fetchone()
+        return self._map_row_to_expense(row) if row else None
+
+    def find_feedback_records(self, user_id: UUID) -> list[Expense]:
+        """Only user-confirmed predictions are valid ground truth."""
+        query = """
+            SELECT id, user_id, amount, description, category, expense_date,
+                   category_source, predicted_category, category_confidence,
+                   model_version
+            FROM expenses
+            WHERE user_id = %s
+              AND category_source = %s
+              AND predicted_category IS NOT NULL
+              AND category_confidence IS NOT NULL
+              AND model_version IS NOT NULL
+        """
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(query, (user_id, CategorySource.MANUAL.value))
+                return [self._map_row_to_expense(row) for row in cursor.fetchall()]
+
+    def find_prediction_records(self, user_id: UUID) -> list[Expense]:
+        """All persisted predictions, including those awaiting confirmation."""
+        query = """
+            SELECT id, user_id, amount, description, category, expense_date,
+                   category_source, predicted_category, category_confidence,
+                   model_version
+            FROM expenses
+            WHERE user_id = %s AND predicted_category IS NOT NULL
+              AND category_confidence IS NOT NULL AND model_version IS NOT NULL
+        """
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(query, (user_id,))
+                return [self._map_row_to_expense(row) for row in cursor.fetchall()]
+
+    def find_prediction_records(self, user_id: UUID) -> list[Expense]:
+        """All persisted predictions, including those awaiting confirmation."""
+        query = """
+            SELECT id, user_id, amount, description, category, expense_date,
+                   category_source, predicted_category, category_confidence,
+                   model_version
+            FROM expenses
+            WHERE user_id = %s AND predicted_category IS NOT NULL
+              AND category_confidence IS NOT NULL AND model_version IS NOT NULL
+        """
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(query, (user_id,))
+                return [self._map_row_to_expense(row) for row in cursor.fetchall()]

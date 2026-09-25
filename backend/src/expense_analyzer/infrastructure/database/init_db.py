@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     category VARCHAR(50) NOT NULL,
     expense_date DATE NOT NULL,
     category_source VARCHAR(20) NOT NULL DEFAULT 'manual',
+    predicted_category VARCHAR(50),
     category_confidence DOUBLE PRECISION,
     model_version VARCHAR(50),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -35,11 +36,19 @@ CREATE TABLE IF NOT EXISTS expenses (
 );
 """
 
+# Kept separate from CREATE so deployments with an existing table retain the
+# original model output needed to compare it with a later user correction.
+ADD_PREDICTED_CATEGORY_COLUMN = """
+ALTER TABLE expenses
+ADD COLUMN IF NOT EXISTS predicted_category VARCHAR(50);
+"""
+
 
 def initialize_database() -> None:
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(CREATE_USERS_TABLE)
             cursor.execute(CREATE_EXPENSES_TABLE)
+            cursor.execute(ADD_PREDICTED_CATEGORY_COLUMN)
 
         connection.commit()

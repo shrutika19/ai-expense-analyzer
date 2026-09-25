@@ -45,5 +45,11 @@ class ExpenseResponse(BaseModel):
     category: ExpenseCategory | None = None
     expense_date: date
     category_source: CategorySource
+    predicted_category: ExpenseCategory | None
     category_confidence: float | None
     model_version: str | None
+
+
+class ExpenseCategoryCorrectionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    category: ExpenseCategory

@@ -10,6 +10,7 @@ VALID_MODEL_STATUSES = {
     "candidate",
     "validated",
     "production",
+    "previous",
     "retired",
 }
 
@@ -117,6 +118,45 @@ class ModelRegistry:
         raise FileNotFoundError(
             f"Registry entry not found: {model_name} {model_version}"
         )
+
+    def version_state(self, model_name: str) -> dict[str, str | None]:
+        """Expose production/candidate/rollback versions without loading artifacts."""
+        entries = [entry for entry in self.list_entries() if entry.model_name == model_name]
+        return {
+            "current_production_version": next((e.model_version for e in entries if e.status == "production"), None),
+            "candidate_version": next((e.model_version for e in entries if e.status == "candidate"), None),
+            "previous_version": next((e.model_version for e in entries if e.status == "previous"), None),
+        }
+
+    def promote_candidate(
+        self, model_name: str, model_version: str, *, approved: bool, inference_tested: bool
+    ) -> ModelRegistryEntry:
+        """Explicit promotion only; production artifacts are never overwritten."""
+        if not approved:
+            raise ValueError("Candidate promotion requires explicit approval.")
+        if not inference_tested:
+            raise ValueError("Candidate promotion requires successful inference testing.")
+        candidate = self.get_entry(model_name, model_version)
+        if candidate.status not in {"candidate", "validated", "previous"}:
+            raise ValueError("Only a candidate, validated, or previous model can be promoted.")
+        entries = list(self.list_entries())
+        updated = []
+        for entry in entries:
+            status = entry.status
+            if entry.model_name == model_name and entry.status == "production":
+                status = "previous"
+            if entry.model_name == model_name and entry.model_version == model_version:
+                status = "production"
+            updated.append(ModelRegistryEntry(entry.model_name, entry.model_version,
+                           entry.artifact_location, status, entry.metrics, entry.created_timestamp))
+        self._write_entries(updated)
+        return self.get_entry(model_name, model_version)
+
+    def rollback(self, model_name: str, previous_version: str, *, approved: bool,
+                 inference_tested: bool) -> ModelRegistryEntry:
+        """Make a retained previous artifact production after explicit approval."""
+        return self.promote_candidate(model_name, previous_version, approved=approved,
+                                      inference_tested=inference_tested)
 
     def list_entries(self) -> tuple[ModelRegistryEntry, ...]:
         if not self.registry_path.exists():

@@ -24,8 +24,9 @@ def test_create_expense(client, auth_headers) -> None:
     assert data["category"] == "Food"
     assert data["expense_date"] == "2026-09-09"
     assert data["category_source"] == "manual"
-    assert data["category_confidence"] is None
-    assert data["model_version"] is None
+    assert data["predicted_category"] is not None
+    assert data["category_confidence"] is not None
+    assert data["model_version"] is not None
 
 
 def test_create_expense_rejects_invalid_amount(
@@ -125,8 +126,9 @@ def test_create_expense_persists_to_database(
     assert data["category"] == "Food"
     assert data["expense_date"] == "2026-09-09"
     assert data["category_source"] == "manual"
-    assert data["category_confidence"] is None
-    assert data["model_version"] is None
+    assert data["predicted_category"] is not None
+    assert data["category_confidence"] is not None
+    assert data["model_version"] is not None
 
 
 def test_get_expenses(client, auth_headers) -> None:
@@ -167,8 +169,9 @@ def test_get_expenses(client, auth_headers) -> None:
     assert matching_expense["category"] == "Travel"
     assert matching_expense["expense_date"] == "2026-09-08"
     assert matching_expense["category_source"] == "manual"
-    assert matching_expense["category_confidence"] is None
-    assert matching_expense["model_version"] is None
+    assert matching_expense["predicted_category"] is not None
+    assert matching_expense["category_confidence"] is not None
+    assert matching_expense["model_version"] is not None
 
 
 def test_get_expenses_returns_list(

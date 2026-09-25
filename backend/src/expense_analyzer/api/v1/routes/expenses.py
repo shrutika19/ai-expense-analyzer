@@ -9,6 +9,7 @@ from expense_analyzer.api.v1.dependencies import (
 from expense_analyzer.api.v1.schemas.expense import (
     ExpenseCreateRequest,
     ExpenseResponse,
+    ExpenseCategoryCorrectionRequest,
 )
 from expense_analyzer.domain.entities.user import User
 from expense_analyzer.services.expense_service import ExpenseService
@@ -70,3 +71,16 @@ def get_expense(
     expense = service.get_expense(expense_id, user_id=current_user.id)
 
     return ExpenseResponse.model_validate(expense)
+
+
+@router.patch("/{expense_id}/category", response_model=ExpenseResponse)
+def correct_category(
+    expense_id: UUID,
+    request: ExpenseCategoryCorrectionRequest,
+    current_user: User = Depends(get_current_user),
+    service: ExpenseService = Depends(get_expense_service),
+) -> ExpenseResponse:
+    """Record a user-confirmed category while retaining the initial prediction."""
+    return ExpenseResponse.model_validate(
+        service.correct_category(expense_id, request.category, current_user.id)
+    )

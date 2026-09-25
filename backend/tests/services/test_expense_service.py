@@ -66,8 +66,9 @@ class FakeInferenceService:
     model_version = "v1.0.0"
 
     def predict(self, prediction):
-        raise AssertionError(
-            "ML prediction should not run for manual categories."
+        return CategoryPredictionOutput(
+            predicted_category="Food",
+            confidence=0.90,
         )
 
 
@@ -133,6 +134,9 @@ def test_create_expense() -> None:
     assert result.description == "Lunch"
     assert result.category == ExpenseCategory.FOOD
     assert result.expense_date == date(2026, 9, 9)
+    assert result.predicted_category == ExpenseCategory.FOOD
+    assert result.category_confidence == 0.90
+    assert result.model_version == "v1.0.0"
 
 
 

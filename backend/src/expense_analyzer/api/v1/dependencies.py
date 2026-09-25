@@ -50,6 +50,7 @@ from expense_analyzer.services.expense_import_service import (
 from expense_analyzer.services.expense_service import ExpenseService
 from expense_analyzer.core.config import get_settings
 from expense_analyzer.ml.inference.service import InferenceService
+from expense_analyzer.ml.feedback.service import FeedbackService
 from functools import lru_cache
 
 bearer_scheme = HTTPBearer()
@@ -177,4 +178,13 @@ def get_expense_service(
         preprocessing_pipeline=pipeline,
         repository=repository,
         inference_service=inference_service,
+    )
+
+
+def get_feedback_service(
+    repository: ExpenseRepository = Depends(get_expense_repository),
+) -> FeedbackService:
+    return FeedbackService(
+        repository=repository,
+        low_confidence_threshold=get_settings().ml_confidence_threshold,
     )
