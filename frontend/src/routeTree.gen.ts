@@ -14,6 +14,8 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as UploadRouteImport } from './routes/upload'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as RegisterRouteImport } from './routes/register'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +42,8 @@ const UploadRoute = UploadRouteImport.update({
   path: '/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({ id: '/login', path: '/login', getParentRoute: () => rootRouteImport } as any)
+const RegisterRoute = RegisterRouteImport.update({ id: '/register', path: '/register', getParentRoute: () => rootRouteImport } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +51,8 @@ export interface FileRoutesByFullPath {
   '/expenses': typeof ExpensesRoute
   '/insights': typeof InsightsRoute
   '/upload': typeof UploadRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +60,8 @@ export interface FileRoutesByTo {
   '/expenses': typeof ExpensesRoute
   '/insights': typeof InsightsRoute
   '/upload': typeof UploadRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,15 @@ export interface FileRoutesById {
   '/expenses': typeof ExpensesRoute
   '/insights': typeof InsightsRoute
   '/upload': typeof UploadRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/analytics' | '/expenses' | '/insights' | '/upload'
+  fullPaths: '/' | '/analytics' | '/expenses' | '/insights' | '/upload' | '/login' | '/register'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/analytics' | '/expenses' | '/insights' | '/upload'
-  id: '__root__' | '/' | '/analytics' | '/expenses' | '/insights' | '/upload'
+  to: '/' | '/analytics' | '/expenses' | '/insights' | '/upload' | '/login' | '/register'
+  id: '__root__' | '/' | '/analytics' | '/expenses' | '/insights' | '/upload' | '/login' | '/register'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +87,8 @@ export interface RootRouteChildren {
   ExpensesRoute: typeof ExpensesRoute
   InsightsRoute: typeof InsightsRoute
   UploadRoute: typeof UploadRoute
+  LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -116,6 +128,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UploadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': { id: '/login'; path: '/login'; fullPath: '/login'; preLoaderRoute: typeof LoginRouteImport; parentRoute: typeof rootRouteImport }
+    '/register': { id: '/register'; path: '/register'; fullPath: '/register'; preLoaderRoute: typeof RegisterRouteImport; parentRoute: typeof rootRouteImport }
   }
 }
 
@@ -125,6 +139,8 @@ const rootRouteChildren: RootRouteChildren = {
   ExpensesRoute: ExpensesRoute,
   InsightsRoute: InsightsRoute,
   UploadRoute: UploadRoute,
+  LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

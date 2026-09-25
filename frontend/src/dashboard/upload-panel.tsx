@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import type { ParsedRow, UploadStatus } from "@/types";
 import { formatMoney } from "@/utils/format";
 import { useExpenseUpload } from "@/hooks/use-expense-upload";
+import { useExpenses } from "@/hooks/use-expenses";
 
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -74,6 +75,7 @@ export function UploadPanel() {
   const [dragging, setDragging] = useState(false);
 
   const { upload_file } = useExpenseUpload();
+  const { reload } = useExpenses();
 
   function reset() {
     setStatus("idle");
@@ -148,6 +150,7 @@ async function handleFile(file: File) {
     toast.success(
       `${response.imported_count} expenses imported successfully.`,
     );
+    reload();
   } catch (e) {
     setStatus("error");
     setError(
@@ -167,8 +170,7 @@ async function handleFile(file: File) {
         <CardHeader>
           <CardTitle className="font-display text-base">Upload a statement</CardTitle>
           <CardDescription>
-            CSV or JSON, up to 5 MB. Files are validated in the browser only — nothing is sent
-            anywhere yet.
+            CSV or JSON, up to 5 MB. The validated file is securely imported to your account.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

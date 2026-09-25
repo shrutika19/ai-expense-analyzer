@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { AppSidebar } from "@/common/app-sidebar";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Select,
   SelectContent,
@@ -38,6 +39,9 @@ export function AppShell({
   description?: string;
   children: ReactNode;
 }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="p-8 text-sm text-muted-foreground">Loading account…</div>;
+  if (!user) { window.location.assign("/login"); return null; }
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
