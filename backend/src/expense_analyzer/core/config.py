@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     # The server decides which model version is active.
     # Clients cannot select the model version.
     model_version: str = "v1.0.0"
+    model_name: str = "expense_category"
     model_artifacts_directory: str = "artifacts/models"
     ml_confidence_threshold: float = 0.70
 

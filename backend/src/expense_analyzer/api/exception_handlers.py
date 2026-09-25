@@ -175,7 +175,7 @@ async def predictor_unavailable_handler(
     )
 
     return JSONResponse(
-        status_code=500,
+        status_code=503,
         content={
             "error": {
                 "code": "PREDICTOR_UNAVAILABLE",

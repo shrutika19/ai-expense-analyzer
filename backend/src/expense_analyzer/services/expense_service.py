@@ -23,6 +23,7 @@ from expense_analyzer.ml.inference.service import (
 from expense_analyzer.ml.models.category_prediction import (
     CategoryPredictionInput,
 )
+from expense_analyzer.ml.exceptions import MLInferenceError
 from expense_analyzer.domain.enums.category_source import (
     CategorySource,
 )
@@ -51,12 +52,24 @@ class ExpenseService:
         category_source = CategorySource.MANUAL
         # Always preserve the prediction.  A manual category is ground truth,
         # not a reason to discard the model output used for comparison.
-        prediction = self.inference_service.predict(
-            CategoryPredictionInput(
-                description=request.description,
-                amount=float(request.amount),
+        try:
+            prediction = self.inference_service.predict(
+                CategoryPredictionInput(
+                    description=request.description,
+                    amount=float(request.amount),
+                )
             )
-        )
+        except MLInferenceError:
+            # A user-supplied category is a safe explicit fallback. Automatic
+            # categorization must surface the controlled ML error instead.
+            if category is None:
+                raise
+            self.inference_service.telemetry.record_fallback()
+            return self.repository.save(Expense(
+                amount=request.amount, description=request.description,
+                category=category, expense_date=request.expense_date,
+                user_id=user_id, category_source=CategorySource.MANUAL,
+            ))
         predicted_category = ExpenseCategory(prediction.predicted_category)
         category_confidence = prediction.confidence
         model_version = self.inference_service.model_version

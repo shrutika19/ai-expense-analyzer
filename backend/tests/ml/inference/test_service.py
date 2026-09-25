@@ -374,3 +374,23 @@ def test_service_does_not_load_model_during_prediction(
     )
 
     assert predictor.predict.call_count == 3
+
+
+@patch("expense_analyzer.ml.inference.service.ModelBundleLoader")
+@patch("expense_analyzer.ml.inference.service.MLPredictor")
+def test_service_records_latency_and_low_confidence_telemetry(
+    predictor_class: Mock, loader_class: Mock,
+) -> None:
+    loader_class.return_value.load.return_value = Mock(classifier=Mock(), feature_pipeline=Mock())
+    predictor_class.return_value.predict.return_value = CategoryPredictionOutput(
+        predicted_category="Food", confidence=0.4,
+    )
+    service = InferenceService("test-artifacts", "v1.0.0", confidence_threshold=0.7)
+
+    service.predict(CategoryPredictionInput(description="lunch", amount=10))
+
+    metrics = service.telemetry.snapshot("v1.0.0")
+    assert metrics["prediction_count"] == 1
+    assert metrics["low_confidence_count"] == 1
+    assert metrics["average_inference_latency_ms"] is not None
+    assert service.readiness()["ready"] is True
