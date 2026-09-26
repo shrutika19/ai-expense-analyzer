@@ -14,6 +14,11 @@ from expense_analyzer.domain.enums.category_source import (
 
 class ExpenseRepository:
 
+    _SORT_COLUMNS = {
+        "expense_date": "expense_date", "description": "description",
+        "category": "category", "amount": "amount",
+    }
+
     def save(self, expense: Expense) -> Expense:
         self.save_many([expense])
         return expense
@@ -116,6 +121,36 @@ class ExpenseRepository:
             return None
 
         return self._map_row_to_expense(row)
+
+    def search_page(self, user_id: UUID, *, search: str, category: ExpenseCategory | None,
+                    page: int, page_size: int, sort_by: str, sort_direction: str) -> tuple[list[Expense], int]:
+        column = self._SORT_COLUMNS[sort_by]
+        direction = "ASC" if sort_direction == "asc" else "DESC"
+        where = ["user_id = %s"]
+        params: list = [user_id]
+        if search.strip():
+            where.append("(description ILIKE %s OR category ILIKE %s)")
+            term = f"%{search.strip()}%"
+            params.extend([term, term])
+        if category is not None:
+            where.append("category = %s")
+            params.append(category.value)
+        condition = " AND ".join(where)
+        select = "id, user_id, amount, description, category, expense_date, category_source, predicted_category, category_confidence, model_version"
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(f"SELECT COUNT(*) FROM expenses WHERE {condition}", params)
+                total = cursor.fetchone()[0]
+                cursor.execute(f"SELECT {select} FROM expenses WHERE {condition} ORDER BY {column} {direction}, id DESC LIMIT %s OFFSET %s",
+                               [*params, page_size, (page - 1) * page_size])
+                rows = cursor.fetchall()
+        return [self._map_row_to_expense(row) for row in rows], total
+
+    def delete(self, expense_id: UUID, user_id: UUID) -> bool:
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM expenses WHERE id = %s AND user_id = %s", (expense_id, user_id))
+                return cursor.rowcount == 1
 
     @staticmethod
     def _map_row_to_expense(

@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { ReactNode } from "react";
 
 import { createExpense, getExpenses } from "@/services/expense-service";
+import { useAuth } from "@/hooks/use-auth";
 import type { Expense, LoadStatus, NewExpense } from "@/types";
 
 /**
@@ -21,18 +22,27 @@ interface ExpensesContextValue {
 const ExpensesContext = createContext<ExpensesContextValue | null>(null);
 
 export function ExpensesProvider({ children }: { children: ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [status, setStatus] = useState<LoadStatus>("loading");
   const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
+    // Do not request protected data from login/register pages or while the
+    // stored JWT is still being verified.
+    if (authLoading) return;
+    if (!user) {
+      setExpenses([]);
+      setStatus("ready");
+      return;
+    }
     let active = true;
     getExpenses().then((items) => { if (active) { setExpenses(items); setStatus("ready"); } })
       .catch(() => { if (active) setStatus("error"); });
     return () => {
       active = false;
     };
-  }, [nonce]);
+  }, [nonce, user, authLoading]);
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 

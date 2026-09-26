@@ -9,6 +9,13 @@ export const createExpense = async (input: NewExpense) => mapExpense(await api<A
   method: "POST", body: JSON.stringify({ description: input.merchant, amount: input.amount,
     expense_date: input.date, category: input.category || undefined }),
 }));
+export type TableQuery = { search: string; category?: string; page: number; page_size: number; sort_by: "expense_date" | "description" | "category" | "amount"; sort_direction: "asc" | "desc" };
+export async function searchExpenses(query: TableQuery) {
+  const result = await api<{ items: ApiExpense[]; total_count: number; page: number; page_size: number }>("/expenses/search", { method: "POST", body: JSON.stringify(query) });
+  return { ...result, items: result.items.map(mapExpense) };
+}
+export const getCategories = () => api<string[]>("/expenses/categories");
+export async function deleteExpenseRequest(id: string) { await api<void>(`/expenses/${id}`, { method: "DELETE" }); }
 
 export async function importExpenses(
   file: File,

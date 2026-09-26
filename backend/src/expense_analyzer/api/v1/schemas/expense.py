@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Literal
 from decimal import Decimal
 from uuid import UUID
 
@@ -53,3 +54,20 @@ class ExpenseResponse(BaseModel):
 class ExpenseCategoryCorrectionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     category: ExpenseCategory
+
+
+class ExpenseTableRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    search: str = Field(default="", max_length=200)
+    category: ExpenseCategory | None = None
+    page: int = Field(default=1, ge=1)
+    page_size: int = Field(default=10, ge=1, le=100)
+    sort_by: Literal["expense_date", "description", "category", "amount"] = "expense_date"
+    sort_direction: Literal["asc", "desc"] = "desc"
+
+
+class ExpenseTableResponse(BaseModel):
+    items: list[ExpenseResponse]
+    total_count: int
+    page: int
+    page_size: int

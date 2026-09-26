@@ -171,3 +171,10 @@ class ExpenseService:
             )
 
         return expense
+
+    def search_expenses(self, user_id: UUID, **filters):
+        return self.repository.search_page(user_id, **filters)
+
+    def delete_expense(self, expense_id: UUID, user_id: UUID) -> None:
+        if not self.repository.delete(expense_id, user_id):
+            raise ExpenseNotFoundException(str(expense_id))
