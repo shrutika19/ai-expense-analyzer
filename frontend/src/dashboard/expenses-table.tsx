@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Search, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyBlock, LoadingBlock } from "@/common/states";
@@ -34,8 +34,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useExpenses } from "@/hooks/use-expenses";
-import { EXPENSE_CATEGORIES, type Expense } from "@/types";
+import { getCategories, searchExpenses, deleteExpenseRequest, type TableQuery } from "@/services/expense-service";
+import type { Expense } from "@/types";
 import { formatDate, formatMoney } from "@/utils/format";
 
 type SortKey = "date" | "merchant" | "category" | "amount";
@@ -79,31 +79,15 @@ function SortHeader({
 }
 
 export function ExpensesTable({ expenses, loading }: { expenses: Expense[]; loading?: boolean }) {
-  const { deleteExpense } = useExpenses();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("all");
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [asc, setAsc] = useState(false);
   const [page, setPage] = useState(0);
-
-  const rows = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const filtered = expenses.filter((e) => {
-      const matchesQuery =
-        !q || e.merchant.toLowerCase().includes(q) || e.category.toLowerCase().includes(q);
-      const matchesCat = category === "all" || e.category === category;
-      return matchesQuery && matchesCat;
-    });
-    const dir = asc ? 1 : -1;
-    return [...filtered].sort((a, b) => {
-      if (sortKey === "amount") return (a.amount - b.amount) * dir;
-      return String(a[sortKey]).localeCompare(String(b[sortKey])) * dir;
-    });
-  }, [expenses, query, category, sortKey, asc]);
-
-  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-  const current = Math.min(page, pageCount - 1);
-  const paged = rows.slice(current * PAGE_SIZE, current * PAGE_SIZE + PAGE_SIZE);
+  const [rows, setRows] = useState<Expense[]>([]); const [total, setTotal] = useState(0); const [categories, setCategories] = useState<string[]>([]); const [serverLoading, setServerLoading] = useState(true);
+  useEffect(() => { getCategories().then(setCategories).catch(() => setCategories([])); }, []);
+  useEffect(() => { let active = true; setServerLoading(true); const timer = setTimeout(() => { const sortMap: Record<SortKey, TableQuery["sort_by"]> = { date: "expense_date", merchant: "description", category: "category", amount: "amount" }; searchExpenses({ search: query, category: category === "all" ? undefined : category, page: page + 1, page_size: PAGE_SIZE, sort_by: sortMap[sortKey], sort_direction: asc ? "asc" : "desc" }).then(r => { if (active) { setRows(r.items); setTotal(r.total_count); } }).catch(() => { if (active) { setRows([]); setTotal(0); } }).finally(() => active && setServerLoading(false)); }, 250); return () => { active = false; clearTimeout(timer); }; }, [query, category, page, sortKey, asc, expenses]);
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE)); const current = Math.min(page, pageCount - 1); const paged = rows;
 
   function toggleSort(key: SortKey) {
     if (key === sortKey) setAsc((v) => !v);
@@ -146,7 +130,7 @@ export function ExpensesTable({ expenses, loading }: { expenses: Expense[]; load
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All categories</SelectItem>
-              {EXPENSE_CATEGORIES.map((c) => (
+              {categories.map((c) => (
                 <SelectItem key={c} value={c}>
                   {c}
                 </SelectItem>
@@ -156,7 +140,7 @@ export function ExpensesTable({ expenses, loading }: { expenses: Expense[]; load
           <AddExpenseDialog />
         </div>
 
-        {loading ? (
+        {loading || serverLoading ? (
           <LoadingBlock rows={6} />
         ) : paged.length === 0 ? (
           <EmptyBlock
@@ -215,8 +199,7 @@ export function ExpensesTable({ expenses, loading }: { expenses: Expense[]; load
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => {
-                                deleteExpense(e.id);
-                                toast.success("Expense deleted");
+                                void deleteExpenseRequest(e.id).then(() => { setPage(0); setRows((items) => items.filter((item) => item.id !== e.id)); setTotal((count) => count - 1); toast.success("Expense deleted"); }).catch((err) => toast.error(err instanceof Error ? err.message : "Unable to delete expense."));
                               }}
                             >
                               Delete
@@ -232,10 +215,10 @@ export function ExpensesTable({ expenses, loading }: { expenses: Expense[]; load
           </div>
         )}
 
-        {!loading && rows.length > 0 ? (
+        {!loading && !serverLoading && total > 0 ? (
           <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
             <span>
-              {rows.length} result{rows.length === 1 ? "" : "s"} · page {current + 1} of {pageCount}
+              {total} result{total === 1 ? "" : "s"} · page {current + 1} of {pageCount}
             </span>
             <div className="flex gap-2">
               <Button
